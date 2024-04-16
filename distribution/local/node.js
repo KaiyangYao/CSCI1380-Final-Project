@@ -50,7 +50,7 @@ const start = function(onStart) {
     const pathname = url.parse(req.url).pathname;
     const [, service, method] = pathname.split('/');
 
-    console.log(`[SERVER] (${global.config.ip}:${global.config.port})
+    console.log(`[SERVER] (${global.nodeConfig.ip}:${global.nodeConfig.port})
         Request: ${service}:${method}`);
 
 
@@ -119,12 +119,7 @@ const start = function(onStart) {
         console.log(`[SERVER] Args: ${JSON.stringify(args)}
             ServiceCallback: ${serviceCallback}`);
 
-        // service[method](...args, serviceCallback);
-        if (typeof service !== 'function') {
-          service[method](...args, serviceCallback);
-        } else {
-          service(...args, serviceCallback);
-        }
+        service[method](...args, serviceCallback);
       });
     });
   });
@@ -141,8 +136,8 @@ const start = function(onStart) {
     remotely through the service interface.
   */
 
-  server.listen(global.config.port, global.config.ip, () => {
-    console.log(`Server running at http://${global.config.ip}:${global.config.port}/`);
+  server.listen(global.nodeConfig.port, global.nodeConfig.ip, () => {
+    console.log(`Server running at http://${global.nodeConfig.ip}:${global.nodeConfig.port}/`);
     onStart(server);
   });
 };
