@@ -11,9 +11,9 @@ let store = (config) => {
         let message = [{key: null, gid: context.gid}];
         distribution[context.gid].comm.send(message,
             {service: 'store', method: 'get'}, (errors, values) => {
-              let ketList = Object.values(values).reduce((acc, val) =>
+              let keyList = Object.values(values).reduce((acc, val) =>
                 acc.concat(val), []);
-              callback(errors, ketList);
+              callback(errors, keyList);
             });
       } else {
         let kid = id.getID(configuration);
