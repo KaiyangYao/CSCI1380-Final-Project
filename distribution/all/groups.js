@@ -10,7 +10,8 @@ let groups = (config) => {
       distribution[context.gid].comm.send(
           [gid], {service: 'groups', method: 'get'}, callback);
     },
-    put: (gid, group, callback) => {
+    put: (gidObj, group, callback) => {
+      let gid = typeof gidObj === 'string' ? gidObj : gidObj.gid;
       local.groups.put(gid, group, (e, v) => {
         distribution[context.gid].comm.send(
             [gid, group], {service: 'groups', method: 'put'}, callback);

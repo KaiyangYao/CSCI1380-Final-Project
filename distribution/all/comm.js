@@ -5,14 +5,15 @@ const comm = (config) => {
   context.gid = config.gid || 'all';
 
   return {
-    send: (groupId, remote, callback) => {
+    send: (args, remote, callback) => {
       local.groups.get(context.gid, (e, nodes) => {
         let counter = 0;
         const errors = {};
         const values = {};
+
         for (let sid of Object.keys(nodes)) {
-          let node = nodes[sid];
-          local.comm.send(groupId, {node, ...remote}, (e, v) => {
+          remote.node = nodes[sid];
+          local.comm.send(args, remote, (e, v) => {
             if (e) {
               errors[sid] = e;
             } else {
