@@ -9,12 +9,22 @@
   "devDependencies": {
     "eslint": "^8.55.0",
     "eslint-config-google": "^0.14.0",
+    "husky": "^9.0.7",
     "jest": "^27.4.7"
   },
   "scripts": {
     "test": "jest",
-    "lint": "eslint --ignore-path .gitignore ."
+    "lint": "eslint --ignore-path .gitignore .",
+    "prepare": "husky"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run test"
+    }
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "yargs": "^17.7.2"
+  }
 }
