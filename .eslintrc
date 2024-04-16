@@ -26,6 +26,7 @@
                 "selector": "ClassExpression",
                 "message": "Class expressions are not allowed."
             }
-        ]
+        ],
+        "max-len": ["error", { "code": 120 }]
     }
 }
