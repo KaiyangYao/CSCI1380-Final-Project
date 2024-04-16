@@ -1,5 +1,6 @@
-const id = require('../util/id');
+let local = require('../local/local');
 const distribution = global.distribution;
+const id = require('../util/id');
 
 let mem = (config) => {
   let context = {};
@@ -22,11 +23,11 @@ let mem = (config) => {
           let nid = context.hash(kid, nids);
           let sid = nid.substring(0, 5);
 
-          distribution.local.groups.get(context.gid, (e, nodes) => {
+          local.groups.get(context.gid, (e, nodes) => {
             let node = nodes[sid];
             let remote = {service: 'mem', method: 'get', node: node};
             let message = [{key: configuration, gid: context.gid}];
-            distribution.local.comm.send(message, remote, callback);
+            local.comm.send(message, remote, callback);
           });
         });
       }
@@ -39,11 +40,11 @@ let mem = (config) => {
         let nid = context.hash(kid, nids);
         let sid = nid.substring(0, 5);
 
-        distribution.local.groups.get(context.gid, (e, nodes) => {
+        local.groups.get(context.gid, (e, nodes) => {
           let node = nodes[sid];
           let remote = {service: 'mem', method: 'put', node: node};
           let message = [object, {key: configuration, gid: context.gid}];
-          distribution.local.comm.send(message, remote, callback);
+          local.comm.send(message, remote, callback);
         });
       });
     },
@@ -55,11 +56,11 @@ let mem = (config) => {
         let nid = context.hash(kid, nids);
         let sid = nid.substring(0, 5);
 
-        distribution.local.groups.get(context.gid, (e, nodes) => {
+        local.groups.get(context.gid, (e, nodes) => {
           let node = nodes[sid];
           let remote = {service: 'mem', method: 'append', node: node};
           let message = [object, {key: configuration, gid: context.gid}];
-          distribution.local.comm.send(message, remote, callback);
+          local.comm.send(message, remote, callback);
         });
       });
     },
@@ -70,17 +71,17 @@ let mem = (config) => {
         let nid = context.hash(kid, nids);
         let sid = nid.substring(0, 5);
 
-        distribution.local.groups.get(context.gid, (e, nodes) => {
+        local.groups.get(context.gid, (e, nodes) => {
           let node = nodes[sid];
           let remote = {service: 'mem', method: 'del', node: node};
           let message = [{key: configuration, gid: context.gid}];
-          distribution.local.comm.send(message, remote, callback);
+          local.comm.send(message, remote, callback);
         });
       });
     },
     reconf: (oldGroup, callback) => {
       global.distribution[context.gid].mem.get(null, (e, keys) => {
-        distribution.local.groups.get(context.gid, (e, newGroup) => {
+        local.groups.get(context.gid, (e, newGroup) => {
           let oldAllNodeInformation = Object.values(oldGroup);
           let oldNids = oldAllNodeInformation.map((node) => {
             return id.getNID(node);
@@ -100,12 +101,12 @@ let mem = (config) => {
             if (oldTargetNode !== newTargetNode) {
               let remote = {service: 'mem', method: 'get'};
               remote.node = oldGroup[oldTargetNode.substring(0, 5)];
-              distribution.local.comm.send([keyObj], remote, (e, obj) => {
+              local.comm.send([keyObj], remote, (e, obj) => {
                 remote.method = 'del';
-                distribution.local.comm.send([keyObj], remote, (e, v) => {
+                local.comm.send([keyObj], remote, (e, v) => {
                   remote.method = 'put';
                   remote.node = newGroup[newTargetNode.substring(0, 5)];
-                  distribution.local.comm.send([obj, keyObj], remote, callback);
+                  local.comm.send([obj, keyObj], remote, callback);
                 });
               });
             }
