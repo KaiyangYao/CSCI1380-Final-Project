@@ -1,3 +1,4 @@
 node_modules
-*.zip
-submission/*
+submission.zip
+submission/javascript/src/main
+store
