@@ -22,7 +22,7 @@ let status = (config) => {
     },
     stop: (callback) => {
       global.distribution[context.gid].comm.send(
-          null, {service: 'status', method: 'stop'}, callback,
+          [], {service: 'status', method: 'stop'}, callback,
       );
     },
     spawn: (conf, callback) => {
