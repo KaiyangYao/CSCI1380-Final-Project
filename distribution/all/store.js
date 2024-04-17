@@ -78,7 +78,40 @@ let store = (config) => {
         });
       });
     },
-    reconf: (groupName, sid, callback) => {
+    reconf: (oldGroup, callback) => {
+      global.distribution[context.gid].store.get(null, (e, keys) => {
+        distribution.local.groups.get(context.gid, (e, newGroup) => {
+          let oldAllNodeInformation = Object.values(oldGroup);
+          let oldNids = oldAllNodeInformation.map((node) => {
+            return id.getNID(node);
+          });
+          let newAllNodeInformation = Object.values(newGroup);
+          let newNids = newAllNodeInformation.map((node) => {
+            return id.getNID(node);
+          });
+
+          for (let key of keys) {
+            const kid = id.getID(key);
+            const oldTargetNode = context.hash(kid, oldNids);
+            const newTargetNode = context.hash(kid, newNids);
+            const keyObj = {key: key, gid: context.gid};
+
+            // If two hashes are different, we need to reconf that key
+            if (oldTargetNode !== newTargetNode) {
+              let remote = {service: 'store', method: 'get'};
+              remote.node = oldGroup[oldTargetNode.substring(0, 5)];
+              distribution.local.comm.send([keyObj], remote, (e, obj) => {
+                remote.method = 'del';
+                distribution.local.comm.send([keyObj], remote, (e, v) => {
+                  remote.method = 'put';
+                  remote.node = newGroup[newTargetNode.substring(0, 5)];
+                  distribution.local.comm.send([obj, keyObj], remote, callback);
+                });
+              });
+            }
+          }
+        });
+      });
     },
   };
 };

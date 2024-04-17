@@ -9,12 +9,18 @@
   "devDependencies": {
     "eslint": "^8.55.0",
     "eslint-config-google": "^0.14.0",
-    "jest": "^27.4.7"
+    "javascript-obfuscator": "^4.1.0",
+    "jest": "^27.5.1"
   },
   "scripts": {
-    "test": "jest",
+    "test": "jest --maxWorkers 1",
     "lint": "eslint --ignore-path .gitignore ."
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "http": "^0.0.1-security",
+    "https": "^1.0.0",
+    "yargs": "^17.7.2"
+  }
 }
