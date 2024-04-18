@@ -28,10 +28,17 @@ if (!fs.existsSync(dirPath)) {
   fs.mkdirSync(dirPath);
 }
 
+function sanitizeKey(key) {
+  // Replace any characters that are not alphanumeric
+  // or underscore with an empty string
+  console.log('SANITIZE: ' + key);
+  return key.replace(/[^a-zA-Z0-9_-]/g, '');
+}
+
 function getConfig(config, object) {
   let configuration = {};
   if (typeof config === 'string') {
-    configuration.key = config;
+    configuration.key = sanitizeKey(config);
     configuration.gid = 'local';
   } else if (typeof config === 'object') {
     configuration = config || {};
@@ -58,7 +65,7 @@ store.put = function(object, config, callback) {
   config = getConfig(config, object);
   createGroupFolder(config.gid);
   const filePath = path.join(__dirname, '../../store', id.getSID(node),
-      config.gid, config.key);
+      config.gid, sanitizeKey(config.key));
   fs.writeFileSync(filePath, serialization.serialize(object));
   callback(null, object);
 };
@@ -69,7 +76,7 @@ store.append = function(object, config, callback) {
   config = getConfig(config, object);
   createGroupFolder(config.gid);
   const filePath = path.join(__dirname, '../../store', id.getSID(node),
-      config.gid, config.key);
+      config.gid, sanitizeKey(config.key));
   if (fs.existsSync(filePath)) {
     const content = fs.readFileSync(filePath, 'utf8');
     const contentList = serialization.deserialize(content);
@@ -95,12 +102,12 @@ store.get = function(config, callback) {
       if (err) {
         console.log(err);
       }
-      // console.log('LOCAL STORE GET: ', files);
+      console.log('LOCAL STORE GET: ', files);
       callback(null, files);
     });
   } else {
     const filePath = path.join(__dirname, '../../store', id.getSID(node),
-        config.gid, config.key);
+        config.gid, sanitizeKey(config.key));
     if (fs.existsSync(filePath)) {
       const content = fs.readFileSync(filePath, 'utf8');
       callback(null, serialization.deserialize(content));
@@ -116,7 +123,7 @@ store.del = function(config, callback) {
   createGroupFolder(config.gid);
 
   const filePath = path.join(__dirname, '../../store', id.getSID(node),
-      config.gid, config.key);
+      config.gid, sanitizeKey(config.key));
   if (fs.existsSync(filePath)) {
     const content = fs.readFileSync(filePath, 'utf8');
     fs.unlinkSync(filePath);

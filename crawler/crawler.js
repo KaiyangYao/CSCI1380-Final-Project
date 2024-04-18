@@ -1,4 +1,6 @@
 global.fetch = require('node-fetch');
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
+
 global.nodeConfig = {ip: '127.0.0.1', port: 7070};
 const distribution = require('../distribution');
 const id = distribution.util.id;
@@ -39,31 +41,12 @@ const startNodes = (cb) => {
   });
 };
 
-
-let m1 = (key, value) => {
-  let words = value.split(/(\s+)/).filter((e) => e !== ' ');
-  console.log(words);
-  let out = {};
-  out[words[1]] = parseInt(words[3]);
-  return out;
-};
-
-let r1 = (key, values) => {
-  let out = {};
-  out[key] = values.reduce((a, b) => Math.max(a, b), -Infinity);
-  return out;
-};
-
 let dataset = [
-  {'000': '006701199099999 1950 0515070049999999N9 +0000 1+9999'},
-  {'106': '004301199099999 1950 0515120049999999N9 +0022 1+9999'},
-  {'212': '004301199099999 1950 0515180049999999N9 -0011 1+9999'},
-  {'318': '004301265099999 1949 0324120040500001N9 +0111 1+9999'},
-  {'424': '004301265099999 1949 0324180040500001N9 +0078 1+9999'},
+  {'000': 'https://atlas.cs.brown.edu/data/gutenberg/'},
 ];
 
 const terminate = () => {
-  console.log('------------------------------NODES CLEANING...');
+  console.log('-------------NODES CLEANING---------');
   let remote = {service: 'status', method: 'stop'};
   remote.node = n1;
   distribution.local.comm.send([], remote, (e, v) => {
@@ -77,23 +60,107 @@ const terminate = () => {
   });
 };
 
+
+let mapCrawlParent = async (key, value) => {
+  const response = await global.fetch(value);
+  const content = await response.text();
+  // console.log('content: ', content);
+
+  const dom = new global.JSDOM(content);
+  const baseURL = value;
+  const anchorElements = Array.from(dom.window.document.querySelectorAll('a'));
+  let out = [];
+  anchorElements.map((a) => {
+    const href = a.getAttribute('href');
+    let o = {};
+    let hrefKey = href.toString().replace(/[^a-zA-Z0-9_-]/g, '');
+    // check it has data or CDOA, CMOA, CNOD, CSOA,
+    const isDataOrOneOf = hrefKey.includes('data') || ['CDOA', 'CMOA', 'CNOD', 'CSOA'].includes(hrefKey);
+    if (isDataOrOneOf == false) {
+      o[hrefKey] = new URL(href, baseURL).toString();
+      out.push(o);
+    }
+    // o[hrefKey] = new URL(href, baseURL).toString();
+    // out.push(o);
+  });
+
+  return out;
+};
+
+// check txt
+let reduceCrawlParent = (key, values) => {
+  if (values[0].includes('txt') == false) {
+    // let out = {};
+    // out[key] = key;
+    return key;
+  } else {
+    return null;
+  }
+};
+
+let mapCrawlChild = async (key, values) => {
+  let out = [];
+  // console.log('Key and Values: ', key, values);
+  for (value of values) {
+    const baseURL = value;
+    // console.log('Key and Value: ', key, value);
+    const response = await global.fetch(value);
+    const content = await response.text();
+    // console.log('Key and Value: ', key, value);
+
+    const dom = new global.JSDOM(content);
+    const anchorElements = Array.from(dom.window.document.querySelectorAll('a'));
+    // console.log('anchorElements: ', anchorElements);
+
+    anchorElements.map((a) => {
+      const href = a.getAttribute('href');
+      let o = {};
+      let hrefKey = href.toString().replace(/[^a-zA-Z0-9_-]/g, '');
+      // check it has data or CDOA, CMOA, CNOD, CSOA,
+      const isDataOrOneOf = hrefKey.includes('data') || ['CDOA', 'CMOA', 'CNOD', 'CSOA'].includes(hrefKey);
+      if (isDataOrOneOf == false) {
+        // console.log('baseurl: ', baseURL);
+        const newURL = new URL(href, baseURL).toString();
+        // console.log('NewUrl: ', newURL);
+        o[hrefKey] = newURL;
+        out.push(o);
+      }
+      // o[hrefKey] = new URL(href, baseURL).toString();
+      // out.push(o);
+    });
+  }
+
+  return out;
+};
+
+
 const doMapReduce = () => {
   distribution.crawler.store.get(null, (e, v) => {
-    console.log('Keys: ', v);
     console.log('Values and Error: ', e, v);
-    distribution.crawler.mr.exec({keys: v, map: m1, reduce: r1}, (e, v) => {
-      try {
-        // expect(v).toEqual(expect.arrayContaining(expected));
-        // done();
-        console.log('Value: ', v);
-      } catch (e) {
-        // done(e);
-        console.log('Error Crawl');
+    distribution.crawler.mr.exec({keys: v, map: mapCrawlParent,
+      reduce: reduceCrawlParent}, (e, v) => {
+      if (v.length != 0) {
+        console.log('Crawl Again!!!!!!');
+        doCrawlURL(v);
+      } else {
+        terminate();
       }
-      terminate();
     });
   });
 };
+
+const doCrawlURL = (urlKey) => {
+  distribution.crawler.mr.exec({keys: urlKey, map: mapCrawlChild,
+    reduce: reduceCrawlParent}, (e, v) => {
+    // if (v.length != 0) {
+    //   console.log('Crawl Again!!!!!!');
+    //   doCrawlURL(v);
+    // } else {
+    terminate();
+    // }
+  });
+};
+
 
 // let crawl = async (dataset) => {
 //   let cntr = 0;

@@ -3,6 +3,10 @@
 const util = require('./distribution/util/util.js');
 const args = require('yargs').argv;
 global.fetch = require('node-fetch');
+global.cheerio = require('cheerio');
+global.JSDOM = require('jsdom').JSDOM;
+
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
 
 // Default configuration
 global.nodeConfig = global.nodeConfig || {

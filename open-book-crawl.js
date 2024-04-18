@@ -2,7 +2,7 @@ const cheerio = require('cheerio');
 const fs = require('fs');
 const path = require('path');
 global.fetch = require('node-fetch');
-
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
 const BASE_URL = 'http://www.gutenberg.org'; // This should be the base URL of a Gutenberg mirror if you're using one.
 
 async function fetchHTML(url) {
@@ -55,7 +55,16 @@ async function downloadBook(url) {
 }
 
 async function main() {
-  const url = `${BASE_URL}/browse/scores/top`;
+  // const url = `${BASE_URL}/browse/scores/top`;
+  const url = 'https://atlas.cs.brown.edu/data/gutenberg/';
+  try {
+    const response = await global.fetch(url);
+    const html = await response.text();
+    console.log('HTML: ', html);
+  } catch (error) {
+    console.error('Error extracting text from URL:', error);
+  }
+
   const bookLinks = await getBookLinks(url);
 
   // Ensure the books directory exists
@@ -63,9 +72,11 @@ async function main() {
     fs.mkdirSync('./books');
   }
 
-  for (let bookLink of bookLinks) {
-    await downloadBook(bookLink);
-  }
+  console.log('Length ', bookLinks.length);
+
+  // for (let bookLink of bookLinks) {
+  //   await downloadBook(bookLink);
+  // }
 }
 
 main().catch(console.error);

@@ -37,6 +37,7 @@ status.get = function(key, callback) {
 
 status.stop = function(callback) {
   callback(null, node);
+  console.log('Node Stop ', node);
   process.exit(0);
 };
 
@@ -51,7 +52,7 @@ status.spawn = function(conf, callback) {
   conf.onStart = new Function(f);
   const cmdPath = path.join(__dirname, '../../distribution.js');
   const serializeObj = serialization.serialize(conf);
-  spawn('node', [cmdPath, '--config', `${serializeObj}`]);
+  spawn('node', [cmdPath, '--config', `${serializeObj}`], {detached: true, stdio: 'inherit'});
 };
 
 module.exports = status;

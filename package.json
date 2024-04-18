@@ -19,8 +19,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
     "http": "^0.0.1-security",
     "https": "^1.0.0",
+    "node-fetch": "^2.7.0",
     "yargs": "^17.7.2"
   }
 }
