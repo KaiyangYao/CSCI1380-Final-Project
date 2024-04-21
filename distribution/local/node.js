@@ -117,7 +117,7 @@ const start = function(onStart) {
 
 
         // console.log(`[SERVER] Args: ${JSON.stringify(args)}
-            // ServiceCallback: ${serviceCallback}`);
+        //     ServiceCallback: ${serviceCallback}`);
 
         service[method](...args, serviceCallback);
       });
