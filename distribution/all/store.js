@@ -18,6 +18,7 @@ let store = (config) => {
       } else {
         let kid = id.getID(configuration);
         distribution[context.gid].status.get('nid', (e, nids) => {
+          // console.log('Get NID: ', e, nids);
           nids = Object.values(nids);
           let nid = context.hash(kid, nids);
           let sid = nid.substring(0, 5);
@@ -35,6 +36,7 @@ let store = (config) => {
       configuration = configuration || id.getID(object);
       let kid = id.getID(configuration);
       distribution[context.gid].status.get('nid', (e, nids) => {
+        // console.log('Put NID: ', e, nids);
         nids = Object.values(nids);
         let nid = context.hash(kid, nids);
         let sid = nid.substring(0, 5);
@@ -51,6 +53,7 @@ let store = (config) => {
       configuration = configuration || id.getID(object);
       let kid = id.getID(configuration);
       distribution[context.gid].status.get('nid', (e, nids) => {
+        // console.log('Append NID: ', e, nids);
         nids = Object.values(nids);
         let nid = context.hash(kid, nids);
         let sid = nid.substring(0, 5);

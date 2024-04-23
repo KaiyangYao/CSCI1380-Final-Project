@@ -63,23 +63,91 @@ store.put = function(object, config, callback) {
   callback(null, object);
 };
 
-store.append = function(object, config, callback) {
-  // console.log('Object: ', object, config);
+// store.append = function(object, config, callback) {
+//   // console.log('Object: ', object, config);
+//   callback = callback || function() {};
+//   config = getConfig(config, object);
+//   // createGroupFolder(config.gid);
+//   const filePath = path.join(__dirname, '../../store', id.getSID(node),
+//       config.gid, config.key);
+//   if (fs.existsSync(filePath)) {
+//     const content = fs.readFileSync(filePath, 'utf8');
+//     const contentList = serialization.deserialize(content);
+//     contentList.push(object);
+//     fs.writeFileSync(filePath, serialization.serialize(contentList));
+//     callback(null, contentList);
+//   } else {
+//     const contentList = [object];
+//     fs.writeFileSync(filePath, serialization.serialize(contentList));
+//     callback(null, contentList);
+//   }
+// };
+
+store.append = function(object, configuration, callback) {
   callback = callback || function() {};
-  config = getConfig(config, object);
-  createGroupFolder(config.gid);
-  const filePath = path.join(__dirname, '../../store', id.getSID(node),
-      config.gid, config.key);
-  if (fs.existsSync(filePath)) {
-    const content = fs.readFileSync(filePath, 'utf8');
-    const contentList = serialization.deserialize(content);
-    contentList.push(object);
-    fs.writeFileSync(filePath, serialization.serialize(contentList));
-    callback(null, contentList);
-  } else {
-    const contentList = [object];
-    fs.writeFileSync(filePath, serialization.serialize(contentList));
-    callback(null, contentList);
+
+  if (!Array.isArray(object)) {
+    object = [object];
+  }
+
+  configuration = getConfig(configuration, object);
+
+  const filename = path.join(__dirname, '../../store', id.getSID(node),
+      configuration.gid, configuration.key);
+
+  try {
+    fs.accessSync(filename);
+
+    // File exists, read and update its contents
+    let data = fs.readFileSync(filename, 'utf8');
+    data = serialization.deserialize(data);
+
+    let serialized;
+    object.forEach((o) => {
+      if (Array.isArray(data)) {
+        data.push(o);
+        serialized = serialization.serialize(data);
+      } else {
+        let list = [data, o];
+        serialized = serialization.serialize(list);
+      }
+    });
+
+    fs.writeFileSync(filename, serialized);
+  } catch (err) {
+    // File doesn't exist or there's an error accessing it
+    let serialized = serialization.serialize(object);
+    fs.writeFileSync(filename, serialized);
+  }
+
+  // If you need to return something, you can do it here
+  callback(null, object);
+};
+
+store.appendAll = function(objectDict, configuration, callback) {
+  callback = callback || function() { };
+  configuration = getConfig(configuration);
+
+  let count = 0;
+  let allObjects = [];
+  let keys = Object.keys(objectDict);
+  if (count === Object.keys(objectDict).length) {
+    callback(null, allObjects);
+  }
+  for (let key of keys) {
+    store.append(objectDict[key],
+        {
+          key: key, gid: configuration.gid,
+        },
+        (e, v) => {
+          if (v) {
+            count++;
+            allObjects.push(v);
+            if (count === Object.keys(objectDict).length) {
+              callback(null, allObjects);
+            }
+          }
+        });
   }
 };
 

@@ -28,7 +28,8 @@ function idToNum(id) {
 
 function naiveHash(kid, nids) {
   nids.sort();
-  return nids[idToNum(kid) % nids.length];
+  let n = parseInt(kid, 16);
+  return nids[n % nids.length];
 }
 
 function consistentHash(kid, nids) {

@@ -1,7 +1,10 @@
 const localStatus = require('../local/status');
 const localGroups = require('../local/groups');
+const id = require('../util/id');
 
 let status = (config) => {
+  global.config = config;
+  global.config.hash = config.hash || id.naiveHash;
   let context = {};
   context.gid = config.gid || 'all'; // contains a property named gid
   return {

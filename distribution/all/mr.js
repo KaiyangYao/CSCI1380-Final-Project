@@ -4,6 +4,7 @@ const id = require('../util/id');
 const mr = function(config) {
   let context = {};
   context.gid = config.gid || 'all';
+  context.hash = config.hash || id.naiveHash;
 
   return {
     exec: (configuration, callback) => {
@@ -114,58 +115,143 @@ const mr = function(config) {
           }
           let count = 0;
           let groupCount = 0;
-          let expectedCount = 0;
+          // let expectedCount = 0;
           let allKeys = [];
           if (matchedKeys.length === 0) {
             callback(e, allKeys);
           }
-          // console.log('Shuffle Matched Keys: ', matchedKeys);
-          for (let key of matchedKeys) {
-            const singleConfig = {key: key, gid: gid};
-            global.distribution.local.store.get(singleConfig, (e, value) => {
-              global.distribution.local.store.del(singleConfig, () => {
-                groupCount ++;
-                // console.log('Shuffle Get: ', key, value);
-                if (e != null) {
-                  callback(new Error('Local Store Get Error'), null);
-                } else if (Array.isArray(value)) {
-                  expectedCount += value.length;
-                  for (let obj of value) {
-                    let keyList = Object.keys(obj);
-                    const k = keyList[0];
-                    allKeys.push(k);
-                    const valueShuffle = obj[keyList[0]];
-                    global.distribution[gid].store.append(valueShuffle,
-                        k, (e, v) => {
-                          count++;
-                          if ((groupCount === matchedKeys.length) && (count === expectedCount)) {
-                            callback(e, allKeys);
-                          }
-                        });
-                  }
-                } else {
-                  let keyList = Object.keys(value);
-                  const k = keyList[0];
-                  if (k) {
-                    allKeys.push(k);
-                    const valueShuffle = value[keyList[0]];
-                    global.distribution[gid].store.append(valueShuffle,
-                        k, (e, v) => {
-                          count++;
-                          if (count === matchedKeys.length) {
-                            callback(e, allKeys);
-                          }
-                        });
-                  } else {
+          console.log('Shuffle Matched Keys: ', matchedKeys);
+
+          global.distribution[gid].status.get('nid', (e, nids) => {
+            console.log('Shuffle nids: ', nids);
+            let nidList = Object.values(nids);
+            const nodeSendList = {};
+            for (let nid of nidList) {
+              let sid = nid.substring(0, 5);
+              nodeSendList[sid] = {};
+            }
+            distribution.local.groups.get(gid, (e, group) => {
+              let sendToNodes = (nodeSendList, allKeys, callback) => {
+                let count = 0;
+                let keys = Object.keys(nodeSendList); // Get an array of keys
+
+                for (let sid of keys) {
+                  let node = group[sid];
+                  let remote = {
+                    node: node,
+                    service: 'store',
+                    method: 'appendAll',
+                  };
+                  global.distribution.local.comm.send([nodeSendList[sid], {gid: gid}], remote, () => {
                     count++;
-                    if (count === matchedKeys.length) {
+                    if (count === keys.length) {
                       callback(e, allKeys);
                     }
-                  }
+                  });
                 }
-              });
+              };
+
+              for (let key of matchedKeys) {
+                const singleConfig = {key: key, gid: gid};
+                global.distribution.local.store.get(singleConfig, (e, value) => {
+                  global.distribution.local.store.del(singleConfig, () => {
+                    if (e != null) {
+                      callback(new Error('Local Store Get Error'), null);
+                    } else if (Array.isArray(value)) {
+                      let countLevel2 = 0;
+                      let expectedCount = value.length;
+                      for (let obj of value) {
+                        let keyList = Object.keys(obj);
+                        const k = keyList[0];
+                        allKeys.push(k);
+                        const valueShuffle = obj[keyList[0]];
+                        let kid = global.distribution.util.id.getID(k);
+                        let nodeSID = global.config.hash(kid, nidList).substring(0, 5);
+                        nodeSendList[nodeSID][k] = nodeSendList[nodeSID][k] || [];
+                        nodeSendList[nodeSID][k].push(valueShuffle);
+                        countLevel2++;
+                        if (countLevel2 === expectedCount) {
+                          count++;
+                          if (count === matchedKeys.length) {
+                            sendToNodes(nodeSendList, allKeys, callback);
+                          }
+                        }
+                      }
+                    } else {
+                      let keyList = Object.keys(value);
+                      const k = keyList[0];
+                      if (k) {
+                        allKeys.push(k);
+                        const valueShuffle = value[keyList[0]];
+                        let kid = global.distribution.util.id.getID(k);
+                        let nodeSID = global.config.hash(kid, nidList).substring(0, 5);
+                        nodeSendList[nodeSID][k] = nodeSendList[nodeSID][k] || [];
+                        nodeSendList[nodeSID][k].push(valueShuffle);
+                        count++;
+                        if (count === matchedKeys.length) {
+                          sendToNodes(nodeSendList, allKeys, callback);
+                        }
+                      } else {
+                        count++;
+                        if (count === matchedKeys.length) {
+                          sendToNodes(nodeSendList, allKeys, callback);
+                        }
+                      }
+                    }
+                  });
+                });
+              }
             });
-          }
+          });
+          // for (let key of matchedKeys) {
+          //   const singleConfig = {key: key, gid: gid};
+          //   global.distribution.local.store.get(singleConfig, (e, value) => {
+          //     global.distribution.local.store.del(singleConfig, () => {
+          //       groupCount ++;
+          //       // console.log('Shuffle Get: ', key, value);
+          //       if (e != null) {
+          //         callback(new Error('Local Store Get Error'), null);
+          //       } else if (Array.isArray(value)) {
+          //         expectedCount += value.length;
+          //         for (let obj of value) {
+          //           let keyList = Object.keys(obj);
+          //           const k = keyList[0];
+          //           allKeys.push(k);
+          //           const valueShuffle = obj[keyList[0]];
+          //           // console.log('Append: ', k, valueShuffle);
+          //           global.distribution[gid].store.append(valueShuffle,
+          //               k, (e, v) => {
+          //                 // console.log('Append value: ', e, v);
+          //                 count++;
+          //                 if ((groupCount === matchedKeys.length) && (count === expectedCount)) {
+          //                   callback(e, allKeys);
+          //                 }
+          //               });
+          //         }
+          //       } else {
+          //         let keyList = Object.keys(value);
+          //         const k = keyList[0];
+          //         if (k) {
+          //           allKeys.push(k);
+          //           const valueShuffle = value[keyList[0]];
+          //           // console.log('Append: ', k, valueShuffle);
+          //           global.distribution[gid].store.append(valueShuffle,
+          //               k, (e, v) => {
+          //                 count++;
+          //                 if (count === matchedKeys.length) {
+          //                   callback(e, allKeys);
+          //                 }
+          //               });
+          //         } else {
+          //           count++;
+          //           if (count === matchedKeys.length) {
+          //             callback(e, allKeys);
+          //           }
+          //         }
+          //       }
+          //     });
+          // });
+          // }
         });
       };
 
@@ -181,7 +267,7 @@ const mr = function(config) {
             let message = [keys, map, compact, context.gid];
             global.distribution[context.gid].comm.send(message,
                 remote, (e, v) => {
-                  console.log('Finish Map!', e, v);
+                  // console.log('Finish Map!', e, v);
                   let message = [keys, context.gid];
                   let remote = {
                     service: mrServiceName,
