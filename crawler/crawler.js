@@ -50,7 +50,7 @@ const startNodes = (cb) => {
 };
 
 let dataset = [
-  {'000': 'https://atlas.cs.brown.edu/data/gutenberg/'},
+  {'000': 'https://atlas.cs.brown.edu/data/gutenberg/0/'},
 ];
 
 const terminate = () => {
@@ -114,7 +114,7 @@ let reduceCrawlParent = (key, values) => {
 
 let mapCrawlChild = async (key, values) => {
   let out = [];
-  // console.log('Key and Values: ', key, values);
+  console.log('Key and Values: ', key, values);
   for (value of values) {
     const baseURL = value;
     // console.log('Key and Value: ', key, value);
@@ -147,6 +147,29 @@ let mapCrawlChild = async (key, values) => {
   return out;
 };
 
+let mapCrawlText = async (key, values) => {
+  let out = {};
+  console.log('Key and Values: ', key, values);
+  baseURL = values[0];
+  // console.log('Key and Value: ', key, value);
+  const response = await global.fetch(baseURL);
+  const content = await response.text();
+  // console.log('Key and Value: ', key, value);
+  let sanitizeContent = content.toString().replace(/[^a-zA-Z0-9\s?!,;.]/g, '');
+  // clean the \r and \n
+  sanitizeContent = sanitizeContent.replace(/\r?\n|\r/g, '');
+  let o = {};
+  o['url'] = baseURL;
+  o['content'] = sanitizeContent;
+  out[key] = o;
+  return out;
+};
+
+let reduceCrawlText = (key, values) => {
+  let out = {};
+  out[key] = values;
+  return out;
+};
 
 const doMapReduce = () => {
   distribution.crawler.store.get(null, (e, v) => {
@@ -155,7 +178,9 @@ const doMapReduce = () => {
       reduce: reduceCrawlParent}, (e, v) => {
       if (v.length != 0) {
         console.log('Crawl Again!!!!!!');
-        doCrawlURL(v);
+        setTimeout(function() {
+          doCrawlURL(v);
+        }, 20);
       } else {
         terminate();
       }
@@ -168,30 +193,26 @@ const doCrawlURL = (urlKey) => {
     reduce: reduceCrawlParent}, (e, v) => {
     if (v.length != 0) {
       console.log('Crawl Again!!!!!!');
-      doCrawlURL(v);
+      setTimeout(function() {
+        doCrawlURL(v);
+      }, 20);
     } else {
-      terminate();
+      doCrawlText();
+      // terminate();
     }
   });
 };
 
-
-// let crawl = async (dataset) => {
-//   let cntr = 0;
-//   // We send the dataset to the cluster
-//   dataset.forEach((o) => {
-//     let key = Object.keys(o)[0];
-//     let value = o[key];
-//     distribution.crawler.store.put(value, key, async (e, v) => {
-//       cntr++;
-//       // Once we are done, run the map reduce
-//       if (cntr === dataset.length) {
-//         await doMapReduce();
-//       }
-//     });
-//   });
-// };
-
+const doCrawlText = () => {
+  // Get the all the text urls from the local store
+  distribution.crawler.store.get(null, (e, v) => {
+    console.log('Values and Error: ', e, v);
+    distribution.crawler.mr.exec({keys: v, map: mapCrawlText,
+      reduce: reduceCrawlText}, (e, v) => {
+      terminate();
+    });
+  });
+};
 
 distribution.node.start((server) => {
   localServer = server;

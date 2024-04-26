@@ -114,7 +114,7 @@ const mr = function(config) {
             }
           }
           let count = 0;
-          let groupCount = 0;
+          // let groupCount = 0;
           // let expectedCount = 0;
           let allKeys = [];
           if (matchedKeys.length === 0) {
@@ -123,7 +123,7 @@ const mr = function(config) {
           console.log('Shuffle Matched Keys: ', matchedKeys);
 
           global.distribution[gid].status.get('nid', (e, nids) => {
-            console.log('Shuffle nids: ', nids);
+            // console.log('Shuffle nids: ', nids);
             let nidList = Object.values(nids);
             const nodeSendList = {};
             for (let nid of nidList) {
