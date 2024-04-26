@@ -19,6 +19,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "async": "^3.2.5",
     "http": "^0.0.1-security",
     "https": "^1.0.0",
     "yargs": "^17.7.2"
