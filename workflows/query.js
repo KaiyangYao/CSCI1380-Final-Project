@@ -77,7 +77,7 @@ const terminate = () => {
   });
 };
 
-const SEARCH_TERM = 'machine learning';
+const SEARCH_TERM = 'machine';
 const cosSim = (score, candidates) => {
   let closest = candidates[0];
   let minDiff = Math.abs(score - closest.score);

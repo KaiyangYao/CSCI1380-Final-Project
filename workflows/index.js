@@ -84,7 +84,7 @@ let dataset = [
 
 const doMapReduce = (cb) => {
   distribution.books.store.get(null, (e, v) => {
-    distribution.books.mr.exec({keys: v, map: m1, reduce: r1}, (e, v) => {
+    distribution.books.mr.exec({keys: v, map: m1, reduce: r1, storeReducedValue: true}, (e, v) => {
       terminate();
     });
   });

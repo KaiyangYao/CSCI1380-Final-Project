@@ -9,7 +9,7 @@ const mr = function(config) {
   return {
     exec: (configuration, callback) => {
       /* Change this with your own exciting Map Reduce code! */
-      const {keys, map, reduce, compact} = configuration;
+      const {keys, map, reduce, compact, storeReducedValue} = configuration;
 
       // Setup phase
       const mrService = {};
@@ -65,7 +65,7 @@ const mr = function(config) {
         });
       };
 
-      mrService.reducer = (keys, reduce, gid, callback) => {
+      mrService.reducer = (keys, reduce, gid, storeReducedValue, callback) => {
         const storeFindConfig = {key: null, gid: gid};
         // console.log('keys in reducer: ', keys);
         global.distribution.local.store.get(storeFindConfig, (e, v) => {
@@ -91,17 +91,24 @@ const mr = function(config) {
               let res = reduce(key, value);
               allRes.push(res);
 
-              let putConfig = {key: key, gid: gid};
-              const deleteConfig = {key: key, gid: gid};
-              global.distribution.local.store.del(deleteConfig, (e, v) => {
-                global.distribution.local.store.put(res,
-                    putConfig, (e, v) => {
-                      count++;
-                      if (count === matchedKeys.length) {
-                        callback(e, allRes);
-                      }
-                    });
-              });
+              if (!storeReducedValue) {
+                count++;
+                if (count === matchedKeys.length) {
+                  callback(e, allRes);
+                }
+              } else {
+                let putConfig = {key: key, gid: gid};
+                const deleteConfig = {key: key, gid: gid};
+                global.distribution.local.store.del(deleteConfig, (e, v) => {
+                  global.distribution.local.store.put(res,
+                      putConfig, (e, v) => {
+                        count++;
+                        if (count === matchedKeys.length) {
+                          callback(e, allRes);
+                        }
+                      });
+                });
+              };
             });
           }
         });
@@ -290,7 +297,7 @@ const mr = function(config) {
                           }
                         }
                         // console.log('KeySet: ', keySet);
-                        let message = [[...keySet], reduce, context.gid];
+                        let message = [[...keySet], reduce, context.gid, storeReducedValue];
                         let remote = {
                           service: mrServiceName,
                           method: 'reducer',

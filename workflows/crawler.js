@@ -175,7 +175,7 @@ const doMapReduce = () => {
   distribution.crawler.store.get(null, (e, v) => {
     console.log('Values and Error: ', e, v);
     distribution.crawler.mr.exec({keys: v, map: mapCrawlParent,
-      reduce: reduceCrawlParent}, (e, v) => {
+      reduce: reduceCrawlParent, storeReducedValue: false}, (e, v) => {
       if (v.length != 0) {
         console.log('Crawl Again!!!!!!');
         setTimeout(function() {
@@ -190,7 +190,7 @@ const doMapReduce = () => {
 
 const doCrawlURL = (urlKey) => {
   distribution.crawler.mr.exec({keys: urlKey, map: mapCrawlChild,
-    reduce: reduceCrawlParent}, (e, v) => {
+    reduce: reduceCrawlParent, storeReducedValue: false}, (e, v) => {
     if (v.length != 0) {
       console.log('Crawl Again!!!!!!');
       setTimeout(function() {
@@ -208,7 +208,7 @@ const doCrawlText = () => {
   distribution.crawler.store.get(null, (e, v) => {
     console.log('Values and Error: ', e, v);
     distribution.crawler.mr.exec({keys: v, map: mapCrawlText,
-      reduce: reduceCrawlText}, (e, v) => {
+      reduce: reduceCrawlText, storeReducedValue: false}, (e, v) => {
       terminate();
     });
   });
