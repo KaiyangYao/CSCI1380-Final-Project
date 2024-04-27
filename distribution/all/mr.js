@@ -90,11 +90,18 @@ const mr = function(config) {
 
               let res = reduce(key, value);
               allRes.push(res);
-              // console.log('Get result: ', res);
-              count++;
-              if (count === matchedKeys.length) {
-                callback(e, allRes);
-              }
+
+              let putConfig = {key: key, gid: gid};
+              const deleteConfig = {key: key, gid: gid};
+              global.distribution.local.store.del(deleteConfig, (e, v) => {
+                global.distribution.local.store.put(res,
+                    putConfig, (e, v) => {
+                      count++;
+                      if (count === matchedKeys.length) {
+                        callback(e, allRes);
+                      }
+                    });
+              });
             });
           }
         });
