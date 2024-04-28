@@ -50,7 +50,10 @@ const startNodes = (cb) => {
 };
 
 let dataset = [
-  {'000': 'https://atlas.cs.brown.edu/data/gutenberg/1/1/1/2/'},
+  {'000': 'https://atlas.cs.brown.edu/data/gutenberg/1/0/'},
+  // {'001': 'https://atlas.cs.brown.edu/data/gutenberg/1/1/'},
+  // {'002': 'https://atlas.cs.brown.edu/data/gutenberg/1/2/'},
+  // {'003': 'https://atlas.cs.brown.edu/data/gutenberg/1/3/'},
 ];
 
 const terminate = () => {
@@ -110,13 +113,11 @@ let reduceCrawlParent = (key, values) => {
 
 let mapCrawlChild = async (key, values) => {
   let out = [];
-  console.log('Extract URLs Key and Values: ', key, values);
+  // console.log('Extract URLs Key and Values: ', key, values);
   for (value of values) {
     const baseURL = value;
     const response = await global.fetch(value);
     const content = await response.text();
-    // console.log('Key and Value: ', key, value);
-
     const dom = new global.JSDOM(content);
     const anchorElements = Array.from(dom.window.document.querySelectorAll('a'));
     // console.log('anchorElements: ', anchorElements);
@@ -135,62 +136,65 @@ let mapCrawlChild = async (key, values) => {
       }
     });
   }
-
   return out;
 };
 
 let mapCrawlText = async (key, values) => {
   let out = {};
   let o = {};
-  console.log('Key and Values: ', key, values);
+  // console.log('Crawl Text Key and Values: ', key, values);
   baseURL = values[0];
-  const response = await global.fetch(baseURL);
-  const content = await response.text();
-
-  // find the language
-  let languageIndex = content.indexOf('Language: ');
-  if (languageIndex !== -1) {
-    let newlineIndex = content.indexOf('\n', languageIndex);
-    if (newlineIndex !== -1) {
-      let languageField = content.substring(languageIndex + 'Language: '.length, newlineIndex).trim();
-      o['language'] = languageField;
+  // const content = '';
+  try {
+    const response = await global.fetch(baseURL);
+    const content = await response.text();
+    // find the language
+    let languageIndex = content.indexOf('Language: ');
+    if (languageIndex !== -1) {
+      let newlineIndex = content.indexOf('\n', languageIndex);
+      if (newlineIndex !== -1) {
+        let languageField = content.substring(languageIndex + 'Language: '.length, newlineIndex).trim();
+        o['language'] = languageField;
       // console.log('Language: ', languageField);
+      }
+    } else {
+      o['language'] = 'Unknown';
     }
-  } else {
-    o['language'] = 'Unknown';
-  }
-  // find the title
-  let titleIndex = content.indexOf('Title: ');
-  if (titleIndex !== -1) {
-    let newlineIndex = content.indexOf('\n', titleIndex);
-    if (newlineIndex !== -1) {
-      let titleField = content.substring(titleIndex + 'Title: '.length, newlineIndex).trim();
-      o['title'] = titleField;
+    // find the title
+    let titleIndex = content.indexOf('Title: ');
+    if (titleIndex !== -1) {
+      let newlineIndex = content.indexOf('\n', titleIndex);
+      if (newlineIndex !== -1) {
+        let titleField = content.substring(titleIndex + 'Title: '.length, newlineIndex).trim();
+        o['title'] = titleField;
       // console.log('Title: ', titleField);
+      }
+    } else {
+      o['title'] = 'Unknown';
     }
-  } else {
-    o['title'] = 'Unknown';
-  }
-  // find the author
-  let authorIndex = content.indexOf('Author: ');
-  if (authorIndex!== -1) {
-    let newlineIndex = content.indexOf('\n', authorIndex);
-    if (newlineIndex!== -1) {
-      let authorField = content.substring(authorIndex + 'Author: '.length, newlineIndex).trim();
-      o['author'] = authorField;
+    // find the author
+    let authorIndex = content.indexOf('Author: ');
+    if (authorIndex!== -1) {
+      let newlineIndex = content.indexOf('\n', authorIndex);
+      if (newlineIndex!== -1) {
+        let authorField = content.substring(authorIndex + 'Author: '.length, newlineIndex).trim();
+        o['author'] = authorField;
       // console.log('Author: ', authorField);
+      }
+    } else {
+      o['author'] = 'Anonymous';
     }
-  } else {
-    o['author'] = 'Anonymous';
+
+    let sanitizeContent = content.toString().replace(/[^a-zA-Z0-9\s?!,;.]/g, ' ');
+    // clean the \r and \n
+    sanitizeContent = sanitizeContent.replace(/\r?\n|\r/g, '');
+    o['url'] = values[0];
+    o['content'] = sanitizeContent;
+    out[key] = o;
+  } catch (error) {
+    console.error('Fetch error:', error);
+    return out;
   }
-
-  let sanitizeContent = content.toString().replace(/[^a-zA-Z0-9\s?!,;.]/g, '');
-  // clean the \r and \n
-  sanitizeContent = sanitizeContent.replace(/\r?\n|\r/g, '');
-
-  o['url'] = baseURL;
-  o['content'] = sanitizeContent;
-  out[key] = o;
   return out;
 };
 
@@ -234,7 +238,7 @@ const doCrawlURL = (urlKey) => {
 const doCrawlText = () => {
   // Get the all the text urls from the local store
   distribution.crawler.store.get(null, (e, v) => {
-    // console.log('Crawler Text Values and Error: ', e, v);
+    console.log('Crawler Text Values length and Error: ', e, v.length);
     distribution.crawler.mr.exec({keys: v, map: mapCrawlText,
       reduce: reduceCrawlText, storeReducedValue: false}, (e, v) => {
       terminate();
