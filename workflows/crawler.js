@@ -50,7 +50,7 @@ const startNodes = (cb) => {
 };
 
 let dataset = [
-  {'000': 'https://atlas.cs.brown.edu/data/gutenberg/0/'},
+  {'000': 'https://atlas.cs.brown.edu/data/gutenberg/1/1/1/2/'},
 ];
 
 const terminate = () => {
@@ -94,18 +94,14 @@ let mapCrawlParent = async (key, value) => {
       o[hrefKey] = new URL(href, baseURL).toString();
       out.push(o);
     }
-    // o[hrefKey] = new URL(href, baseURL).toString();
-    // out.push(o);
   });
 
   return out;
 };
 
-// check txt
 let reduceCrawlParent = (key, values) => {
+  // check txt
   if (values[0].includes('txt') == false) {
-    // let out = {};
-    // out[key] = key;
     return key;
   } else {
     return null;
@@ -114,10 +110,9 @@ let reduceCrawlParent = (key, values) => {
 
 let mapCrawlChild = async (key, values) => {
   let out = [];
-  console.log('Key and Values: ', key, values);
+  console.log('Extract URLs Key and Values: ', key, values);
   for (value of values) {
     const baseURL = value;
-    // console.log('Key and Value: ', key, value);
     const response = await global.fetch(value);
     const content = await response.text();
     // console.log('Key and Value: ', key, value);
@@ -133,14 +128,11 @@ let mapCrawlChild = async (key, values) => {
       // check it has data or CDOA, CMOA, CNOD, CSOA,
       const isDataOrOneOf = hrefKey.includes('data') || ['CDOA', 'CMOA', 'CNOD', 'CSOA'].includes(hrefKey);
       if (isDataOrOneOf == false) {
-        // console.log('baseurl: ', baseURL);
         const newURL = new URL(href, baseURL).toString();
         // console.log('NewUrl: ', newURL);
         o[hrefKey] = newURL;
         out.push(o);
       }
-      // o[hrefKey] = new URL(href, baseURL).toString();
-      // out.push(o);
     });
   }
 
@@ -149,16 +141,53 @@ let mapCrawlChild = async (key, values) => {
 
 let mapCrawlText = async (key, values) => {
   let out = {};
+  let o = {};
   console.log('Key and Values: ', key, values);
   baseURL = values[0];
-  // console.log('Key and Value: ', key, value);
   const response = await global.fetch(baseURL);
   const content = await response.text();
-  // console.log('Key and Value: ', key, value);
+
+  // find the language
+  let languageIndex = content.indexOf('Language: ');
+  if (languageIndex !== -1) {
+    let newlineIndex = content.indexOf('\n', languageIndex);
+    if (newlineIndex !== -1) {
+      let languageField = content.substring(languageIndex + 'Language: '.length, newlineIndex).trim();
+      o['language'] = languageField;
+      // console.log('Language: ', languageField);
+    }
+  } else {
+    o['language'] = 'Unknown';
+  }
+  // find the title
+  let titleIndex = content.indexOf('Title: ');
+  if (titleIndex !== -1) {
+    let newlineIndex = content.indexOf('\n', titleIndex);
+    if (newlineIndex !== -1) {
+      let titleField = content.substring(titleIndex + 'Title: '.length, newlineIndex).trim();
+      o['title'] = titleField;
+      // console.log('Title: ', titleField);
+    }
+  } else {
+    o['title'] = 'Unknown';
+  }
+  // find the author
+  let authorIndex = content.indexOf('Author: ');
+  if (authorIndex!== -1) {
+    let newlineIndex = content.indexOf('\n', authorIndex);
+    if (newlineIndex!== -1) {
+      let authorField = content.substring(authorIndex + 'Author: '.length, newlineIndex).trim();
+      o['author'] = authorField;
+      // console.log('Author: ', authorField);
+    }
+  } else {
+    o['author'] = 'Anonymous';
+  }
+
   let sanitizeContent = content.toString().replace(/[^a-zA-Z0-9\s?!,;.]/g, '');
   // clean the \r and \n
   sanitizeContent = sanitizeContent.replace(/\r?\n|\r/g, '');
-  let o = {};
+
   o['url'] = baseURL;
   o['content'] = sanitizeContent;
   out[key] = o;
@@ -166,9 +195,7 @@ let mapCrawlText = async (key, values) => {
 };
 
 let reduceCrawlText = (key, values) => {
-  let out = {};
-  out[key] = values;
-  return out;
+  return values;
 };
 
 const doMapReduce = () => {
@@ -182,7 +209,8 @@ const doMapReduce = () => {
           doCrawlURL(v);
         }, 20);
       } else {
-        terminate();
+        console.log('Crawl Text!!!!!!');
+        doCrawlText();
       }
     });
   });
@@ -197,8 +225,8 @@ const doCrawlURL = (urlKey) => {
         doCrawlURL(v);
       }, 20);
     } else {
+      console.log('Crawl Text!!!!!!');
       doCrawlText();
-      // terminate();
     }
   });
 };
@@ -206,7 +234,7 @@ const doCrawlURL = (urlKey) => {
 const doCrawlText = () => {
   // Get the all the text urls from the local store
   distribution.crawler.store.get(null, (e, v) => {
-    console.log('Values and Error: ', e, v);
+    // console.log('Crawler Text Values and Error: ', e, v);
     distribution.crawler.mr.exec({keys: v, map: mapCrawlText,
       reduce: reduceCrawlText, storeReducedValue: false}, (e, v) => {
       terminate();

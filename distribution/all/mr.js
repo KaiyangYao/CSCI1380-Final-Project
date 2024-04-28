@@ -29,7 +29,7 @@ const mr = function(config) {
             }
           }
           let count = 0;
-          console.log('Mapper matchedKeys: ', matchedKeys);
+          // console.log('Mapper matchedKeys: ', matchedKeys);
           if (count === matchedKeys.length) {
             callback(e, allRes);
           }
@@ -117,7 +117,7 @@ const mr = function(config) {
       mrService.shuffle = (keys, gid, callback) => {
         const storeFindConfig = {key: null, gid: gid};
         keys = keys.map((item) => `${item}_res`);
-        // console.log('Shuffle Keys: ', keys);
+        console.log('Shuffle Keys: ', keys);
 
         global.distribution.local.store.get(storeFindConfig, (e, v) => {
           let matchedKeys = [];
@@ -134,7 +134,7 @@ const mr = function(config) {
           if (matchedKeys.length === 0) {
             callback(e, allKeys);
           }
-          console.log('Shuffle Matched Keys: ', matchedKeys);
+          // console.log('Shuffle Matched Keys: ', matchedKeys);
 
           global.distribution[gid].status.get('nid', (e, nids) => {
             // console.log('Shuffle nids: ', nids);
@@ -217,55 +217,6 @@ const mr = function(config) {
               }
             });
           });
-          // for (let key of matchedKeys) {
-          //   const singleConfig = {key: key, gid: gid};
-          //   global.distribution.local.store.get(singleConfig, (e, value) => {
-          //     global.distribution.local.store.del(singleConfig, () => {
-          //       groupCount ++;
-          //       // console.log('Shuffle Get: ', key, value);
-          //       if (e != null) {
-          //         callback(new Error('Local Store Get Error'), null);
-          //       } else if (Array.isArray(value)) {
-          //         expectedCount += value.length;
-          //         for (let obj of value) {
-          //           let keyList = Object.keys(obj);
-          //           const k = keyList[0];
-          //           allKeys.push(k);
-          //           const valueShuffle = obj[keyList[0]];
-          //           // console.log('Append: ', k, valueShuffle);
-          //           global.distribution[gid].store.append(valueShuffle,
-          //               k, (e, v) => {
-          //                 // console.log('Append value: ', e, v);
-          //                 count++;
-          //                 if ((groupCount === matchedKeys.length) && (count === expectedCount)) {
-          //                   callback(e, allKeys);
-          //                 }
-          //               });
-          //         }
-          //       } else {
-          //         let keyList = Object.keys(value);
-          //         const k = keyList[0];
-          //         if (k) {
-          //           allKeys.push(k);
-          //           const valueShuffle = value[keyList[0]];
-          //           // console.log('Append: ', k, valueShuffle);
-          //           global.distribution[gid].store.append(valueShuffle,
-          //               k, (e, v) => {
-          //                 count++;
-          //                 if (count === matchedKeys.length) {
-          //                   callback(e, allKeys);
-          //                 }
-          //               });
-          //         } else {
-          //           count++;
-          //           if (count === matchedKeys.length) {
-          //             callback(e, allKeys);
-          //           }
-          //         }
-          //       }
-          //     });
-          // });
-          // }
         });
       };
 
@@ -273,7 +224,7 @@ const mr = function(config) {
 
       global.distribution[context.gid].routes.put(mrService,
           mrServiceName, (e, v) => {
-            console.log('Finish Setup!', e, v);
+            // console.log('Finish Setup!', e, v);
             let remote = {
               service: mrServiceName,
               method: 'mapper',
