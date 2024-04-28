@@ -19,8 +19,6 @@ const mr = function(config) {
         const storeFindConfig = {key: null, gid: gid};
         global.distribution.local.store.get(storeFindConfig, (e, v) => {
           let matchedKeys = [];
-          // console.log('V matchedKeys: ', v);
-          // console.log('Keys matchedKeys: ', keys);
           for (let i = 0; i < v.length; i++) {
             let key = v[i];
             if (keys.includes(key)) {
@@ -39,18 +37,14 @@ const mr = function(config) {
                   if (e != null) {
                     callback(new Error('Local Store Get Error'), null);
                   }
-                  // console.log('Map andand Value: ', key, value);
                   let res = await map(key, value);
+                  console.log('-----------',key, value);
                   if (compact != null) {
                     res = compact(res);
-                  } else {
-                    // console.log('Compact is null');
                   }
-                  // console.log('Map res: ', key, value, Array.isArray(res), res);
                   let putConfig = {key: key+'_res', gid: gid};
                   global.distribution.local.store.put(res,
                       putConfig, (e, v) => {
-                        // delete original store: '000'
                         const deleteConfig = {key: key, gid: gid};
                         global.distribution.local.store.del(deleteConfig, (e, v) => {
                           count++;
@@ -66,7 +60,7 @@ const mr = function(config) {
 
       mrService.reducer = (keys, reduce, gid, callback) => {
         const storeFindConfig = {key: null, gid: gid};
-        // console.log('keys in reducer: ', keys);
+        console.log('keys in reducer: ', keys);
         global.distribution.local.store.get(storeFindConfig, (e, v) => {
           let matchedKeys = [];
           for (let i = 0; i < v.length; i++) {

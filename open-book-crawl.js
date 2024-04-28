@@ -1,9 +1,9 @@
 global.nodeConfig = {ip: '127.0.0.1', port: 7070};
-const distribution = require('../distribution');
+const distribution = require('./distribution');
 const id = distribution.util.id;
 const fs = require('fs');
 const path = require('path');
-const groupsTemplate = require('../distribution/all/groups');
+const groupsTemplate = require('./distribution/all/groups');
 const crawlerGroup = {};
 
 /*
@@ -66,7 +66,7 @@ let prepare = () => {
   const BASE_URL = 'https://atlas.cs.brown.edu/data/gutenberg/';
   let dataset = [];
   let index = 0;
-  const book_path = path.join(__dirname, 'books_temp.txt'); // change to whole dataset when deploy
+  const book_path = path.join(__dirname, './crawler/books_temp.txt'); // change to whole dataset when deploy
   console.log(book_path);
   const book_links = fs.readFileSync(book_path, 'utf-8').split('\n');
   book_links.forEach((line) => {
@@ -102,6 +102,7 @@ let m1 = async function(key, url) {
           html.split(/\r?\n/).forEach((line) => {
             if (line.includes('Author')) {
               book['author'] = line.split(': ')[1];
+              console.log('author: ', book['author']);
             } else if (line.includes('Title')) {
               book['title'] = line.split(': ')[1];
             } else if (line.includes('Language')) {
@@ -122,7 +123,7 @@ let m1 = async function(key, url) {
       .on('error', (err) => {
         console.log('Error: ' + err.message);
       });
-      console.log('------book info: ', book);
+      console.log('------book info: ', book["title"]);
       return book;
 };
 
