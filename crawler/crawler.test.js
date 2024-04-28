@@ -1,4 +1,5 @@
 global.fetch = require('node-fetch');
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
 
 global.nodeConfig = {ip: '127.0.0.1', port: 7070};
 const distribution = require('../distribution');
@@ -23,38 +24,37 @@ let localServer = null;
 const n1 = {ip: '127.0.0.1', port: 7110};
 const n2 = {ip: '127.0.0.1', port: 7111};
 const n3 = {ip: '127.0.0.1', port: 7112};
-
-beforeAll((done) => {
-  crawlerGroup[id.getSID(n1)] = n1;
-  crawlerGroup[id.getSID(n2)] = n2;
-  crawlerGroup[id.getSID(n3)] = n3;
+const n4 = {ip: '127.0.0.1', port: 7113};
+const n5 = {ip: '127.0.0.1', port: 7114};
 
 
-  const startNodes = (cb) => {
-    distribution.local.status.spawn(n1, (e, v) => {
-      distribution.local.status.spawn(n2, (e, v) => {
-        distribution.local.status.spawn(n3, (e, v) => {
-          cb();
+crawlerGroup[id.getSID(n1)] = n1;
+crawlerGroup[id.getSID(n2)] = n2;
+crawlerGroup[id.getSID(n3)] = n3;
+crawlerGroup[id.getSID(n4)] = n4;
+crawlerGroup[id.getSID(n5)] = n5;
+
+
+const startNodes = (cb) => {
+  distribution.local.status.spawn(n1, (e, v) => {
+    distribution.local.status.spawn(n2, (e, v) => {
+      distribution.local.status.spawn(n3, (e, v) => {
+        distribution.local.status.spawn(n4, (e, v) => {
+          distribution.local.status.spawn(n5, (e, v) => {
+            cb();
+          });
         });
       });
     });
-  };
-
-  distribution.node.start((server) => {
-    localServer = server;
-
-    const crawlerConfig = {gid: 'crawler'};
-    startNodes(() => {
-      groupsTemplate(crawlerConfig).put(crawlerConfig,
-          crawlerGroup, (e, v) => {
-            done();
-          });
-    });
   });
-});
+};
 
+let dataset = [
+  {'000': 'https://atlas.cs.brown.edu/data/gutenberg/0'},
+];
 
-afterAll((done) => {
+const terminate = () => {
+  console.log('-------------NODES CLEANING----------');
   let remote = {service: 'status', method: 'stop'};
   remote.node = n1;
   distribution.local.comm.send([], remote, (e, v) => {
@@ -62,79 +62,159 @@ afterAll((done) => {
     distribution.local.comm.send([], remote, (e, v) => {
       remote.node = n3;
       distribution.local.comm.send([], remote, (e, v) => {
-        localServer.close();
-        done();
+        remote.node = n4;
+        distribution.local.comm.send([], remote, (e, v) => {
+          remote.node = n5;
+          distribution.local.comm.send([], remote, (e, v) => {
+            localServer.close();
+          });
+        });
       });
     });
   });
-});
+};
 
 
-test('(25 pts) crawler test', (done) => {
-  let m1 = async function(key, url) {
+let mapCrawlParent = async (key, value) => {
+  const response = await global.fetch(value);
+  const content = await response.text();
+  // console.log('content: ', content);
+
+  const dom = new global.JSDOM(content);
+  const baseURL = value;
+  const anchorElements = Array.from(dom.window.document.querySelectorAll('a'));
+  let out = [];
+  anchorElements.map((a) => {
+    const href = a.getAttribute('href');
     let o = {};
-    try {
-      const response = await global.fetch(url);
-      const html = await response.text();
-      o[url] = html;
-    } catch (error) {
-      console.error('Error extracting text from URL:', error);
+    let hrefKey = href.toString().replace(/[^a-zA-Z0-9_-]/g, '');
+    // check it has data or CDOA, CMOA, CNOD, CSOA,
+    const isDataOrOneOf = hrefKey.includes('data') || ['CDOA', 'CMOA', 'CNOD', 'CSOA'].includes(hrefKey);
+    if (isDataOrOneOf == false) {
+      o[hrefKey] = new URL(href, baseURL).toString();
+      out.push(o);
     }
-    return o;
-  };
+    // o[hrefKey] = new URL(href, baseURL).toString();
+    // out.push(o);
+  });
 
-  let r1 = (key, value) => {
-    let out = {};
-    out[key] = value;
-    return out;
-  };
+  return out;
+};
 
-  let dataset = [{0: 'http://example.com'}];
+// check txt
+let reduceCrawlParent = (key, values) => {
+  if (values[0].includes('txt') == false) {
+    // let out = {};
+    // out[key] = key;
+    return key;
+  } else {
+    return null;
+  }
+};
 
-  // const contentPath = path.join(__dirname, '../search/example-page.txt');
-  // const content = fs.readFileSync(contentPath, 'utf8');
-  // console.log(content);
-  // let expected = [
-  //   {
-  //     'http://example.com': [],
-  //   },
-  // ];
+let mapCrawlChild = async (key, values) => {
+  let out = [];
+  // console.log('Key and Values: ', key, values);
+  for (value of values) {
+    const baseURL = value;
+    // console.log('Key and Value: ', key, value);
+    const response = await global.fetch(value);
+    const content = await response.text();
+    // console.log('Key and Value: ', key, value);
 
-  /* Sanity check: map and reduce locally */
-  // sanityCheck(m1, r1, dataset, expected, done);
+    const dom = new global.JSDOM(content);
+    const anchorElements = Array.from(dom.window.document.querySelectorAll('a'));
+    // console.log('anchorElements: ', anchorElements);
 
-  /* Now we do the same thing but on the cluster */
-  const doMapReduce = (cb) => {
-    distribution.crawler.store.get(null, (e, v) => {
-      try {
-        expect(v.length).toBe(dataset.length);
-      } catch (e) {
-        done(e);
+    anchorElements.map((a) => {
+      const href = a.getAttribute('href');
+      let o = {};
+      let hrefKey = href.toString().replace(/[^a-zA-Z0-9_-]/g, '');
+      // check it has data or CDOA, CMOA, CNOD, CSOA,
+      const isDataOrOneOf = hrefKey.includes('data') || ['CDOA', 'CMOA', 'CNOD', 'CSOA'].includes(hrefKey);
+      if (isDataOrOneOf == false) {
+        // console.log('baseurl: ', baseURL);
+        const newURL = new URL(href, baseURL).toString();
+        // console.log('NewUrl: ', newURL);
+        o[hrefKey] = newURL;
+        out.push(o);
       }
-
-      distribution.crawler.mr.exec({keys: v, map: m1, reduce: r1}, (e, v) => {
-        try {
-          // expect(v).toEqual(expect.arrayContaining(expected));
-          done();
-        } catch (e) {
-          done(e);
-        }
-      });
+      // o[hrefKey] = new URL(href, baseURL).toString();
+      // out.push(o);
     });
-  };
+  }
 
-  let cntr = 0;
+  return out;
+};
 
-  // We send the dataset to the cluster
-  dataset.forEach((o) => {
-    let key = Object.keys(o)[0];
-    let value = o[key];
-    distribution.crawler.store.put(value, key, (e, v) => {
-      cntr++;
-      // Once we are done, run the map reduce
-      if (cntr === dataset.length) {
-        doMapReduce();
+
+const doMapReduce = () => {
+  distribution.crawler.store.get(null, (e, v) => {
+    console.log('Values and Error: ', e, v);
+    distribution.crawler.mr.exec({keys: v, map: mapCrawlParent,
+      reduce: reduceCrawlParent}, (e, v) => {
+      if (v.length != 0) {
+        console.log('Crawl Again!!!!!!');
+        doCrawlURL(v);
+      } else {
+        terminate();
       }
     });
+  });
+};
+
+const doCrawlURL = (urlKey) => {
+  distribution.crawler.mr.exec({keys: urlKey, map: mapCrawlChild,
+    reduce: reduceCrawlParent}, (e, v) => {
+    if (v.length != 0) {
+      console.log('Crawl Again!!!!!!');
+      doCrawlURL(v);
+    } else {
+      terminate();
+    }
+  });
+};
+
+
+// let crawl = async (dataset) => {
+//   let cntr = 0;
+//   // We send the dataset to the cluster
+//   dataset.forEach((o) => {
+//     let key = Object.keys(o)[0];
+//     let value = o[key];
+//     distribution.crawler.store.put(value, key, async (e, v) => {
+//       cntr++;
+//       // Once we are done, run the map reduce
+//       if (cntr === dataset.length) {
+//         await doMapReduce();
+//       }
+//     });
+//   });
+// };
+
+
+distribution.node.start((server) => {
+  localServer = server;
+  const crawlerConfig = {gid: 'crawler'};
+  startNodes(() => {
+    groupsTemplate(crawlerConfig).put(crawlerConfig,
+        crawlerGroup, (e, v) => {
+          console.log('Put nodes into group: ', e, v);
+          let cntr = 0;
+          // We send the dataset to the cluster
+          dataset.forEach((o) => {
+            let key = Object.keys(o)[0];
+            let value = o[key];
+            distribution.crawler.store.put(value, key, (e, v) => {
+              if (!e) {
+                cntr++;
+                // Once we are done, run the map reduce
+                if (cntr === dataset.length) {
+                  doMapReduce();
+                }
+              }
+            });
+          });
+        });
   });
 });

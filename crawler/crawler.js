@@ -24,29 +24,37 @@ let localServer = null;
 const n1 = {ip: '127.0.0.1', port: 7110};
 const n2 = {ip: '127.0.0.1', port: 7111};
 const n3 = {ip: '127.0.0.1', port: 7112};
+const n4 = {ip: '127.0.0.1', port: 7113};
+const n5 = {ip: '127.0.0.1', port: 7114};
 
 
 crawlerGroup[id.getSID(n1)] = n1;
 crawlerGroup[id.getSID(n2)] = n2;
 crawlerGroup[id.getSID(n3)] = n3;
+crawlerGroup[id.getSID(n4)] = n4;
+crawlerGroup[id.getSID(n5)] = n5;
 
 
 const startNodes = (cb) => {
   distribution.local.status.spawn(n1, (e, v) => {
     distribution.local.status.spawn(n2, (e, v) => {
       distribution.local.status.spawn(n3, (e, v) => {
-        cb();
+        distribution.local.status.spawn(n4, (e, v) => {
+          distribution.local.status.spawn(n5, (e, v) => {
+            cb();
+          });
+        });
       });
     });
   });
 };
 
 let dataset = [
-  {'000': 'https://atlas.cs.brown.edu/data/gutenberg/'},
+  {'000': 'https://atlas.cs.brown.edu/data/gutenberg/0'},
 ];
 
 const terminate = () => {
-  console.log('-------------NODES CLEANING---------');
+  console.log('-------------NODES CLEANING----------');
   let remote = {service: 'status', method: 'stop'};
   remote.node = n1;
   distribution.local.comm.send([], remote, (e, v) => {
@@ -54,7 +62,13 @@ const terminate = () => {
     distribution.local.comm.send([], remote, (e, v) => {
       remote.node = n3;
       distribution.local.comm.send([], remote, (e, v) => {
-        localServer.close();
+        remote.node = n4;
+        distribution.local.comm.send([], remote, (e, v) => {
+          remote.node = n5;
+          distribution.local.comm.send([], remote, (e, v) => {
+            localServer.close();
+          });
+        });
       });
     });
   });
@@ -152,12 +166,12 @@ const doMapReduce = () => {
 const doCrawlURL = (urlKey) => {
   distribution.crawler.mr.exec({keys: urlKey, map: mapCrawlChild,
     reduce: reduceCrawlParent}, (e, v) => {
-    // if (v.length != 0) {
-    //   console.log('Crawl Again!!!!!!');
-    //   doCrawlURL(v);
-    // } else {
-    terminate();
-    // }
+    if (v.length != 0) {
+      console.log('Crawl Again!!!!!!');
+      doCrawlURL(v);
+    } else {
+      terminate();
+    }
   });
 };
 
@@ -204,4 +218,3 @@ distribution.node.start((server) => {
         });
   });
 });
-
