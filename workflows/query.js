@@ -1,64 +1,49 @@
+global.fetch = require('node-fetch');
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
 
-const idfValues = {
-  'machine': 0.7,
-  'learning': 1.05,
-};
-
-function calculateTfIdf(query) {
-  const words = query.toLowerCase().split(' ');
-  const tfValues = {};
-  const tfIdfResults = {};
-
-  // Calculate TF
-  words.forEach((word) => {
-    tfValues[word] = (tfValues[word] || 0) + 1;
-  });
-
-  const wordCount = words.length;
-  Object.keys(tfValues).forEach((word) => {
-    tfValues[word] = tfValues[word] / wordCount;
-  });
-
-  // Calculate TF-IDF and format results
-  const results = [];
-  Object.keys(tfValues).forEach((word) => {
-    const tf = tfValues[word];
-    const idf = idfValues[word] || 0; // default IDF to 0 if word is not found
-    const tfIdf = tf * idf;
-    results.push(`${word}: TF: ${tf.toFixed(2)}, IDF: ${idf}, TF*IDF: ${tfIdf.toFixed(2)}`);
-    tfIdfResults[word] = tfIdf;
-  });
-
-  console.log('Results: ', results);
-  return tfIdfResults;
-}
-
-const query = 'machine learning';
-const tfIdfScores = calculateTfIdf(query);
-console.log('TF-IDF Vector Scores: ', tfIdfScores);
-
-
+global.nodeConfig = {ip: '127.0.0.1', port: 7070};
 const distribution = require('../distribution');
 const id = distribution.util.id;
-const groupsTemplate = require('../distribution/all/groups');
-const booksGroup = {};
 
+const groupsTemplate = require('../distribution/all/groups');
+
+const crawlerGroup = {};
+
+/*
+   This hack is necessary since we can not
+   gracefully stop the local listening node.
+   The process that node is
+   running in is the actual jest process
+*/
 let localServer = null;
-global.nodeConfig = {ip: '127.0.0.1', port: 7070};
+
+/*
+    The local node will be the orchestrator.
+*/
 
 const n1 = {ip: '127.0.0.1', port: 7110};
 const n2 = {ip: '127.0.0.1', port: 7111};
 const n3 = {ip: '127.0.0.1', port: 7112};
+const n4 = {ip: '127.0.0.1', port: 7113};
+const n5 = {ip: '127.0.0.1', port: 7114};
 
-booksGroup[id.getSID(n1)] = n1;
-booksGroup[id.getSID(n2)] = n2;
-booksGroup[id.getSID(n3)] = n3;
+
+crawlerGroup[id.getSID(n1)] = n1;
+crawlerGroup[id.getSID(n2)] = n2;
+crawlerGroup[id.getSID(n3)] = n3;
+crawlerGroup[id.getSID(n4)] = n4;
+crawlerGroup[id.getSID(n5)] = n5;
+
 
 const startNodes = (cb) => {
   distribution.local.status.spawn(n1, (e, v) => {
     distribution.local.status.spawn(n2, (e, v) => {
       distribution.local.status.spawn(n3, (e, v) => {
-        cb();
+        distribution.local.status.spawn(n4, (e, v) => {
+          distribution.local.status.spawn(n5, (e, v) => {
+            cb();
+          });
+        });
       });
     });
   });
@@ -72,12 +57,20 @@ const terminate = () => {
     remote.node = n2;
     distribution.local.comm.send([], remote, (e, v) => {
       remote.node = n3;
-      localServer.close();
+      distribution.local.comm.send([], remote, (e, v) => {
+        remote.node = n4;
+        distribution.local.comm.send([], remote, (e, v) => {
+          remote.node = n5;
+          distribution.local.comm.send([], remote, (e, v) => {
+            localServer.close();
+          });
+        });
+      });
     });
   });
 };
 
-const SEARCH_TERM = 'machine';
+const SEARCH_TERM = 'monthly';
 const cosSim = (score, candidates) => {
   let closest = candidates[0];
   let minDiff = Math.abs(score - closest.score);
@@ -95,12 +88,16 @@ const cosSim = (score, candidates) => {
 
 distribution.node.start((server) => {
   localServer = server;
-  const booksConfig = {gid: 'books'};
+  const crawlerConfig = {gid: 'crawler'};
   startNodes(() => {
-    groupsTemplate(booksConfig).put(booksConfig, booksGroup, (e, v) => {
-      distribution.books.store.get(`${SEARCH_TERM}`, (e, v) => {
+    groupsTemplate(crawlerConfig).put(crawlerConfig, crawlerGroup, (e, v) => {
+      distribution.crawler.store.get(`${SEARCH_TERM}`, (e, v) => {
+        console.log('@@@@');
+        console.log(e);
+        console.log(v);
         console.log('The result document is: ');
-        console.log(cosSim(tfIdfScores[SEARCH_TERM], v.score));
+        // Since we can only search 1 term now, the tfidf score for query is always 1
+        console.log(cosSim(1, v.score));
         terminate();
       });
     });

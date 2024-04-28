@@ -50,7 +50,8 @@ const startNodes = (cb) => {
 };
 
 let dataset = [
-  {'000': 'https://atlas.cs.brown.edu/data/gutenberg/1/0/'},
+  // {'000': 'https://atlas.cs.brown.edu/data/gutenberg/1/0/'},
+  {'000': 'https://atlas.cs.brown.edu/data/gutenberg/1/1/1/'},
   // {'001': 'https://atlas.cs.brown.edu/data/gutenberg/1/1/'},
   // {'002': 'https://atlas.cs.brown.edu/data/gutenberg/1/2/'},
   // {'003': 'https://atlas.cs.brown.edu/data/gutenberg/1/3/'},
