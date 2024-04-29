@@ -3,17 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Search Engine</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Project Gutenberg Search</title>
+    <link rel="stylesheet" href="tmp.css">
 </head>
 <body>
-    <div class="search-container">
-        <input type="text" id="author-search" placeholder="Enter author">
-        <input type="text" id="book-search" placeholder="Enter book name">
-        <button onclick="searchBooks()">Search</button>
+    <div class="main-container">
+        <h1>Project Gutenberg Search</h1>
+        <div class="search-container">
+            <input type="text" placeholder="enter..." id="search" />
+            
+        </div>
+        <p>Start your search by entering book title or author.</p>
+        <div class="button-container">
+            <button class="outline" onclick="searchBooks()">Search book</button>
+            <button class="outline" onclick="searchBooks()">Search author</button>
+        </div>
+        <div id="results"></div>
     </div>
-    <div id="results"></div>
-
     <script src="script.js"></script>
 </body>
 </html>

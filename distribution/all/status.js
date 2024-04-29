@@ -1,5 +1,6 @@
 const localStatus = require('../local/status');
 const localGroups = require('../local/groups');
+const id = require('../util/id');
 
 let status = (config) => {
   let context = {};
@@ -19,7 +20,11 @@ let status = (config) => {
               }
               callback(errors, sum);
             } else {
-              callback(errors, values);
+              if (Object.keys(values).length === 0){
+                const node = {ip: global.nodeConfig.ip, port: global.nodeConfig.port};
+                const nid = id.getNID(node);
+                callback(errors,[nid]);
+              }else {callback(errors, values);}
             }
           });
     },

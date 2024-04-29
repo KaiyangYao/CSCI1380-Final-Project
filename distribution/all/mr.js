@@ -38,7 +38,6 @@ const mr = function(config) {
                     callback(new Error('Local Store Get Error'), null);
                   }
                   let res = await map(key, value);
-                  console.log('-----------',key, value);
                   if (compact != null) {
                     res = compact(res);
                   }
@@ -164,7 +163,7 @@ const mr = function(config) {
       };
 
       const mrServiceName = 'mr_' + id.getID(mrService);
-
+      let total = 0;
       global.distribution[context.gid].routes.put(mrService,
           mrServiceName, (e, v) => {
             console.log('Finish Setup!', e, v);
@@ -202,6 +201,7 @@ const mr = function(config) {
                               for (let resList of Object.values(res)) {
                                 for (let r of resList) {
                                   if (r) {
+                                    total += 1;
                                     finalRes.push(r);
                                   }
                                 }
@@ -212,6 +212,7 @@ const mr = function(config) {
                       });
                 });
           });
+          console.log('-------total count:', total);
     },
   };
 };

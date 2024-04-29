@@ -4,7 +4,7 @@ const distribution = global.distribution;
 let store = (config) => {
   let context = {};
   context.gid = config.gid || 'all'; // node group
-  context.hash = config.hash || id.naiveHash; // hash functio
+  context.hash = config.hash || id.naiveHash; // hash function
   return {
     get: (configuration, callback) => {
       if (!configuration) {
@@ -35,8 +35,12 @@ let store = (config) => {
       configuration = configuration || id.getID(object);
       let kid = id.getID(configuration);
       distribution[context.gid].status.get('nid', (e, nids) => {
+        //console.log('------first nids: ', nids);
         nids = Object.values(nids);
         let nid = context.hash(kid, nids);
+        if (nid === undefined) {
+          console.log('----------nids: ',nids, 'object: ', object,'configuration: ',configuration,'kid: ',kid);
+        }
         let sid = nid.substring(0, 5);
 
         distribution.local.groups.get(context.gid, (e, nodes) => {

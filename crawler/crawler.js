@@ -68,7 +68,6 @@ let prepare = () => {
   let dataset = [];
   let index = 0;
   const book_path = path.join(__dirname, 'books_temp.txt'); // change to whole dataset when deploy
-  console.log(book_path);
   const book_links = fs.readFileSync(book_path, 'utf-8').split('\n');
   book_links.forEach((line) => {
     let o = {};
@@ -85,6 +84,7 @@ let prepare = () => {
 let m1 = async function(key, url) {
   let out = {};
   let book = {};
+  book['url'] = url;
   const response = await global.fetch(url);
   const content = await response.text();
   const lines = content.split('\n');
@@ -97,16 +97,20 @@ let m1 = async function(key, url) {
       const author = line.split(': ')[1];
       if (author == undefined) book['author'] = 'anonymous';
       else book['author'] = author.trim();
-    } 
+    }
   });
-  out[url] = book;
-  console.log('book info: ', out);
+  const tmp = url.split('/');
+  const id_temp = tmp[tmp.length-1];
+  const id = id_temp.split('.')[0];
+  //console.log('------id: ',id_temp,id);
+  out[id] = book;
+  //console.log('book info: ', out);
   
   return out;
 };
 
 let r1 = function(key, value) {
-  console.log(`--------key: ${key}, value: ${value}-----`);
+  //console.log(`--------key: ${key}, value: ${value}-----`);
   let o = {};
   o[key] = value;
   return o;
@@ -165,7 +169,7 @@ distribution.node.start((server) => {
       let cntr = 0;
       // We send the dataset to the cluster
       const dataset = prepare();
-      console.log('----------dataset:', dataset);
+      //console.log('----------dataset:', dataset);
       dataset.forEach((o) => {
         let key = Object.keys(o)[0];
         let value = o[key];

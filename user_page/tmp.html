@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Gutenberg Search</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Project Gutenberg Search!</h1>
+            <p>Start your search by entering book title or author.</p>
+        <div class="search-area">
+            <img src="./pg-logo-129x80.png" alt="Book Image" id="book-image">  
+                <div id="search-container">
+                    <input type="text" id="author-search" placeholder="Enter author">
+                    <input type="text" id="book-search" placeholder="Enter book name">
+                    <button onclick="searchBooks()">
+                        🔍
+                    </button>
+                </div>
+            <div id="results"></div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

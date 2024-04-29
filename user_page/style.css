@@ -1,36 +1,39 @@
-body {
+body, html {
+    height: 100%;
+    margin: 0;
     font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f4f4f4; /* Added background color for better visibility */
 }
 
-.search-container {
-    padding: 20px;
-    padding-top: 300px;
+.container {
     text-align: center;
 }
 
-#searchBox {
-    width: 50%;
+.search-area {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.search-boxes {
+    display: flex;
+    flex-direction: column;
+}
+
+.search-boxes div {
+    margin: 10px;
+}
+
+input[type="text"], button {
     padding: 10px;
-    margin-right: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    margin: 5px;
+    font-size: 16px;
 }
 
-button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    background-color: #4CAF50;
-    color: white;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #45a049;
-}
-
-#results {
-    margin-top: 20px;
-    padding: 20px;
-    text-align: center;
+img {
+    max-width: 100px; /* Placeholder image size */
+    margin-right: 20px;
 }
