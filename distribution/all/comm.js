@@ -1,30 +1,42 @@
-const local = require('../local/local');
-
-const comm = (config) => {
+const localComm = require('../local/comm');
+const groups = require('../local/groups');
+let comm = (config) => {
   let context = {};
-  context.gid = config.gid || 'all';
-
+  context.gid = config.gid || 'all'; // contains a property named gid
   return {
-    send: (args, remote, callback) => {
-      local.groups.get(context.gid, (e, nodes) => {
-        let counter = 0;
-        const errors = {};
-        const values = {};
-
-        for (let sid of Object.keys(nodes)) {
-          remote.node = nodes[sid];
-          local.comm.send(args, remote, (e, v) => {
-            if (e) {
-              errors[sid] = e;
-            } else {
-              values[sid] = v;
-            }
-
-            counter += 1;
-            if (counter === Object.keys(nodes).length) {
-              callback(errors, values);
-            }
-          });
+    send: (message, remote, callback) => {
+      // console.log('all.comm.send get called!', remote);
+      callback = callback || function() {};
+      groups.get(context.gid, (error, nodeGroup) => {
+        if (error != null) {
+          callback(new Error('Get Group Error'), null);
+        } else {
+          let counter = Object.keys(nodeGroup).length;
+          //   console.log(counter);
+          let values = {};
+          let errors = {};
+          //   console.log('Start local.comm.send to ', counter, ' nodes!');
+          for (let sid of Object.keys(nodeGroup)) {
+            let remoteInfo = {
+              node: nodeGroup[sid],
+              service: remote.service,
+              method: remote.method,
+            };
+            // console.log('local send: ', remoteInfo);
+            localComm.send(message, remoteInfo, (e, v) => {
+            //   console.log('Successfully send to one node!');
+              if (e != null) {
+                // console.log(e);
+                errors[sid] = e;
+              } else {
+                values[sid] = v;
+              }
+              counter--;
+              if (counter == 0) {
+                callback(errors, values);
+              }
+            });
+          }
         }
       });
     },
@@ -32,3 +44,4 @@ const comm = (config) => {
 };
 
 module.exports = comm;
+

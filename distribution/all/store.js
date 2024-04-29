@@ -3,21 +3,22 @@ const distribution = global.distribution;
 
 let store = (config) => {
   let context = {};
-  context.gid = config.gid || 'all';
-  context.hash = config.hash || id.naiveHash;
+  context.gid = config.gid || 'all'; // node group
+  context.hash = config.hash || id.naiveHash; // hash functio
   return {
     get: (configuration, callback) => {
       if (!configuration) {
         let message = [{key: null, gid: context.gid}];
         distribution[context.gid].comm.send(message,
             {service: 'store', method: 'get'}, (errors, values) => {
-              let keyList = Object.values(values).reduce((acc, val) =>
+              let ketList = Object.values(values).reduce((acc, val) =>
                 acc.concat(val), []);
-              callback(errors, keyList);
+              callback(errors, ketList);
             });
       } else {
         let kid = id.getID(configuration);
         distribution[context.gid].status.get('nid', (e, nids) => {
+          // console.log('Get NID: ', e, nids);
           nids = Object.values(nids);
           let nid = context.hash(kid, nids);
           let sid = nid.substring(0, 5);
@@ -35,6 +36,7 @@ let store = (config) => {
       configuration = configuration || id.getID(object);
       let kid = id.getID(configuration);
       distribution[context.gid].status.get('nid', (e, nids) => {
+        // console.log('Put NID: ', e, nids);
         nids = Object.values(nids);
         let nid = context.hash(kid, nids);
         let sid = nid.substring(0, 5);
@@ -51,6 +53,7 @@ let store = (config) => {
       configuration = configuration || id.getID(object);
       let kid = id.getID(configuration);
       distribution[context.gid].status.get('nid', (e, nids) => {
+        // console.log('Append NID: ', e, nids);
         nids = Object.values(nids);
         let nid = context.hash(kid, nids);
         let sid = nid.substring(0, 5);
