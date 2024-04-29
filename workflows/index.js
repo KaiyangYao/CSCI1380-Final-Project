@@ -27,13 +27,11 @@ const n3 = {ip: '127.0.0.1', port: 7112};
 const n4 = {ip: '127.0.0.1', port: 7113};
 const n5 = {ip: '127.0.0.1', port: 7114};
 
-
 crawlerGroup[id.getSID(n1)] = n1;
 crawlerGroup[id.getSID(n2)] = n2;
 crawlerGroup[id.getSID(n3)] = n3;
 crawlerGroup[id.getSID(n4)] = n4;
 crawlerGroup[id.getSID(n5)] = n5;
-
 
 const startNodes = (cb) => {
   distribution.local.status.spawn(n1, (e, v) => {
@@ -72,46 +70,91 @@ const terminate = () => {
 
 
 let indexMap = (fileName, obj) => {
-  const content = obj[0].title;
+  const contentTitle = obj[0].title;
+  const contentAuthor = obj[0].author;
   const url = obj[0].url;
-  const termFrequency = {};
-  const words = content.toLowerCase().match(/\w+/g) || [];
-  const totalWords = words.length;
+
+  const calculateTermFrequencies = (content) => {
+    const termFrequency = {};
+    const words = content.toLowerCase().match(/\w+/g) || [];
+    const totalWords = words.length;
+    words.forEach((word) => {
+      termFrequency[word] = (termFrequency[word] || 0) + 1;
+    });
+    return {termFrequency, totalWords};
+  };
+
+  const titleData = calculateTermFrequencies(contentTitle);
+  const authorData = calculateTermFrequencies(contentAuthor);
+
   const output = [];
 
-  words.forEach((word) => {
-    termFrequency[word] = (termFrequency[word] || 0) + 1;
-  });
+  const processTerms = (data, tfLabel) => {
+    for (const [term, count] of Object.entries(data.termFrequency)) {
+      const normalizedFrequency = count / data.totalWords;
+      let entry = output.find((o) => Object.keys(o)[0] === term);
+      if (!entry) {
+        entry = {[term]: {url: url}};
+        output.push(entry);
+      }
+      entry[term][tfLabel] = normalizedFrequency;
+    }
+  };
 
-  for (const [term, count] of Object.entries(termFrequency)) {
-    // Normalize term frequency by the total number of words in the document
-    const normalizedFrequency = count / totalWords;
-    let o = {};
-    o[term] = {url: url, tf: normalizedFrequency};
-    output.push(o);
-  }
+  processTerms(titleData, 'titleTF');
+  processTerms(authorData, 'authorTF');
 
   return output;
 };
 
 
 let indexReduce = (term, values) => {
-  const N = 3;
+  const N = 1000;
   let out = {};
-  let idf = 1 + Math.log(N / values.length);
-  let scores = values.map((entry) => ({url: entry.url, score: entry.tf * idf}));
+
+  const calculateIDF = (documentCount) => documentCount > 0 ? 1 + Math.log(N / documentCount) : 0;
+
+  const calculateScores = (entries, idf) => {
+    return entries.map((entry) => ({url: entry.url, score: entry.tf * idf}));
+  };
+
+  const titleEntries = values.filter((v) => v.titleTF !== undefined);
+  const authorEntries = values.filter((v) => v.authorTF !== undefined);
+
+  const titleIDF = calculateIDF(titleEntries.length);
+  const authorIDF = calculateIDF(authorEntries.length);
+
+  // eslint-disable-next-line max-len
+  const titleScores = titleEntries.length > 0 ? calculateScores(titleEntries.map((entry) => ({url: entry.url, tf: entry.titleTF})), titleIDF) : [];
+  // eslint-disable-next-line max-len
+  const authorScores = authorEntries.length > 0 ? calculateScores(authorEntries.map((entry) => ({url: entry.url, tf: entry.authorTF})), authorIDF) : [];
+
+  if (titleScores.length > 0) {
+    out.titleTF = titleEntries;
+    out.titleIDF = titleIDF;
+    out.titleScores = titleScores;
+  }
+  if (authorScores.length > 0) {
+    out.authorTF = authorEntries;
+    out.authorIDF = authorIDF;
+    out.authorScores = authorScores;
+  }
 
   console.log('term: ', term);
-  console.log('tf: ', values);
-  console.log('idf: ', idf);
-  console.log('scores: ', scores);
-  out = {
-    tf: values,
-    idf: idf,
-    score: scores,
-  };
+  if (titleScores.length > 0) {
+    console.log('Title TF: ', titleEntries);
+    console.log('Title IDF: ', titleIDF);
+    console.log('Title Scores: ', titleScores);
+  }
+  if (authorScores.length > 0) {
+    console.log('Author TF: ', authorEntries);
+    console.log('Author IDF: ', authorIDF);
+    console.log('Author Scores: ', authorScores);
+  }
+
   return out;
 };
+
 
 const doIndexMapReduce = (cb) => {
   distribution.crawler.store.get(null, (e, v) => {
