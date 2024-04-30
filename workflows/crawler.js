@@ -50,11 +50,14 @@ const startNodes = (cb) => {
 };
 
 let dataset = [
-  // {'000': 'https://atlas.cs.brown.edu/data/gutenberg/1/0/'},
-  {'000': 'https://atlas.cs.brown.edu/data/gutenberg/1/1/1/'},
-  // {'001': 'https://atlas.cs.brown.edu/data/gutenberg/1/1/'},
+  {'000': 'https://atlas.cs.brown.edu/data/gutenberg/1/0/'},
+  // {'000': 'https://atlas.cs.brown.edu/data/gutenberg/1/1/1/'},
+  // {'001': 'https://atlas.cs.brown.edu/data/gutenberg/2'},
   // {'002': 'https://atlas.cs.brown.edu/data/gutenberg/1/2/'},
   // {'003': 'https://atlas.cs.brown.edu/data/gutenberg/1/3/'},
+  // {'004': 'https://atlas.cs.brown.edu/data/gutenberg/1/4/'},
+  // {'005': 'https://atlas.cs.brown.edu/data/gutenberg/1/5/'},
+
 ];
 
 const terminate = () => {
@@ -115,27 +118,48 @@ let reduceCrawlParent = (key, values) => {
 let mapCrawlChild = async (key, values) => {
   let out = [];
   // console.log('Extract URLs Key and Values: ', key, values);
+  async function fetchWithTimeout(resource, options = {}) {
+    const {timeout = 8000} = options;
+
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+
+    const response = await fetch(resource, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(id);
+
+    return response;
+  }
   for (value of values) {
     const baseURL = value;
-    const response = await global.fetch(value);
-    const content = await response.text();
-    const dom = new global.JSDOM(content);
-    const anchorElements = Array.from(dom.window.document.querySelectorAll('a'));
-    // console.log('anchorElements: ', anchorElements);
+    try {
+      const response = await fetchWithTimeout(value, {
+        timeout: 600000,
+      });
+      const content = await response.text();
+      const dom = new global.JSDOM(content);
+      const anchorElements = Array.from(dom.window.document.querySelectorAll('a'));
+      // console.log('anchorElements: ', anchorElements);
 
-    anchorElements.map((a) => {
-      const href = a.getAttribute('href');
-      let o = {};
-      let hrefKey = href.toString().replace(/[^a-zA-Z0-9_-]/g, '');
-      // check it has data or CDOA, CMOA, CNOD, CSOA,
-      const isDataOrOneOf = hrefKey.includes('data') || ['CDOA', 'CMOA', 'CNOD', 'CSOA'].includes(hrefKey);
-      if (isDataOrOneOf == false) {
-        const newURL = new URL(href, baseURL).toString();
-        // console.log('NewUrl: ', newURL);
-        o[hrefKey] = newURL;
-        out.push(o);
-      }
-    });
+      anchorElements.map((a) => {
+        const href = a.getAttribute('href');
+        let o = {};
+        let hrefKey = href.toString().replace(/[^a-zA-Z0-9_-]/g, '');
+        // check it has data or CDOA, CMOA, CNOD, CSOA,
+        const isDataOrOneOf = hrefKey.includes('data') || ['CDOA', 'CMOA', 'CNOD', 'CSOA'].includes(hrefKey);
+        if (isDataOrOneOf == false) {
+          const newURL = new URL(href, baseURL).toString();
+          // console.log('NewUrl: ', newURL);
+          o[hrefKey] = newURL;
+          out.push(o);
+        }
+      });
+    } catch (e) {
+      console.log('Extract URLs Fetch Error: ', e);
+      continue;
+    };
   }
   return out;
 };
@@ -145,9 +169,25 @@ let mapCrawlText = async (key, values) => {
   let o = {};
   // console.log('Crawl Text Key and Values: ', key, values);
   baseURL = values[0];
-  // const content = '';
+  async function fetchWithTimeout(resource, options = {}) {
+    const {timeout = 8000} = options;
+
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+
+    const response = await fetch(resource, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(id);
+
+    return response;
+  }
   try {
-    const response = await global.fetch(baseURL);
+    const response = await fetchWithTimeout(values[0], {
+      timeout: 600000,
+    });
+    // const response = await global.fetch(baseURL);
     const content = await response.text();
     // find the language
     let languageIndex = content.indexOf('Language: ');
@@ -186,14 +226,14 @@ let mapCrawlText = async (key, values) => {
       o['author'] = 'Anonymous';
     }
 
-    let sanitizeContent = content.toString().replace(/[^a-zA-Z0-9\s?!,;.]/g, ' ');
+    // let sanitizeContent = content.toString().replace(/[^a-zA-Z0-9\s?!,;.]/g, ' ');
     // clean the \r and \n
-    sanitizeContent = sanitizeContent.replace(/\r?\n|\r/g, '');
+    // sanitizeContent = sanitizeContent.replace(/\r?\n|\r/g, '');
     o['url'] = values[0];
-    o['content'] = sanitizeContent;
+    // o['content'] = sanitizeContent;
     out[key] = o;
   } catch (error) {
-    console.error('Fetch error:', error);
+    console.error('Crawl Text Fetch error:', error);
     return out;
   }
   return out;
@@ -272,4 +312,21 @@ distribution.node.start((server) => {
         });
   });
 });
+
+
+// distribution.node.start((server) => {
+//   localServer = server;
+//   const crawlerConfig = {gid: 'crawler'};
+//   startNodes(() => {
+//     groupsTemplate(crawlerConfig).put(crawlerConfig,
+//         crawlerGroup, (e, v) => {
+//           distribution.crawler.store.get(null, (e, v) => {
+//             console.log('Crawler Text Values length and Error: ', e, v.length);
+//             // distribution.crawler.mr.exec({keys: v, map: mapCrawlText,
+//             //   reduce: reduceCrawlText, storeReducedValue: false}, (e, v) => {
+//             terminate();
+//           });
+//         });
+//   });
+// });
 
