@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Gutenberg Search</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="main-container">
+        <h1>Project Gutenberg Search</h1>
+        <div class="search-container">
+            <input type="text" placeholder="enter..." id="search" />
+            
+        </div>
+        <p>Start your search by entering book title or author.</p>
+        <div class="button-container">
+            <button class="outline" onclick="searchBooks()">Search book</button>
+            <button class="outline" onclick="searchBooks()">Search author</button>
+        </div>
+        <div id="results"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
