@@ -1,39 +1,62 @@
-body, html {
-    height: 100%;
-    margin: 0;
-    font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #f4f4f4; /* Added background color for better visibility */
+html {
+    background-image: linear-gradient(to right, #f0a9cc, #d9afed, #b0e1ed);
 }
 
-.container {
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Arial', sans-serif;
+}
+
+.main-container {
     text-align: center;
 }
 
-.search-area {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+h1 {
+    font-size: 3em; /* Adjust size as needed */
+    margin-bottom: 0.5em;
 }
 
-.search-boxes {
-    display: flex;
-    flex-direction: column;
+.search-container {
+    position: relative;
+    margin-bottom: 1em;
 }
 
-.search-boxes div {
-    margin: 10px;
+input[type="text"] {
+    border: none;
+    padding: 10px 20px;
+    width: 40%; /* Adjust width as needed */
+    border-radius: 20px;
 }
 
-input[type="text"], button {
-    padding: 10px;
-    margin: 5px;
-    font-size: 16px;
+button {
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    margin-left: -45px; /* Overlap the button with the input field */
 }
 
-img {
-    max-width: 100px; /* Placeholder image size */
-    margin-right: 20px;
+button.filled {
+    background-color: #ff4757;
+    color: white;
+    border-radius: 20px;
+}
+
+button.outline {
+    background: transparent;
+    border: 2px solid white;
+    color: white;
+    border-radius: 20px;
+}
+
+p {
+    margin-bottom: 2em;
+}
+
+.button-container button {
+    margin: 0 10px;
 }
