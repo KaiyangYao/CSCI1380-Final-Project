@@ -8,18 +8,19 @@ const spellcheck = new natural.Spellcheck(fs.readFileSync(dictionaryPath).toStri
 
 // Function to check spelling and suggest corrections
 function checkSpelling(word) {
-    if (spellcheck.isCorrect(word)) {
-        console.log(`The word "${word}" is spelled correctly.`);
+  if (spellcheck.isCorrect(word)) {
+    console.log(`The word "${word}" is spelled correctly.`);
+  } else {
+    const suggestions = spellcheck.getCorrections(word, 1); // 1 here represents the maximum distance for corrections
+    if (suggestions.length > 0) {
+      console.log(`Did you mean: ${suggestions.join(', ')}?`);
     } else {
-        const suggestions = spellcheck.getCorrections(word, 1); // 1 here represents the maximum distance for corrections
-        if (suggestions.length > 0) {
-            console.log(`Did you mean: ${suggestions.join(', ')}?`);
-        } else {
-            console.log(`No suggestions found for the word "${word}".`);
-        }
+      console.log(`No suggestions found for the word "${word}".`);
     }
+  }
 }
 
 // Example usage
 checkSpelling('welp');
-//module.exports = checkSpelling;
+module.exports = checkSpelling;
+

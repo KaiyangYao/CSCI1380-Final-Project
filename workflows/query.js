@@ -95,6 +95,11 @@ distribution.node.start((server) => {
         console.log('@@@@');
         console.log(e);
         console.log(v);
+        if (e) {
+          console.error('Error retrieving data:', e);
+          terminate();
+          return;
+        }
 
         // Since we can only search 1 term now, the tfidf score for query in cosSim is always 1
         if (v.titleScores) {

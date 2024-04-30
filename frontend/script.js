@@ -1,37 +1,41 @@
+// eslint-disable-next-line no-unused-vars
+function searchBooks(searchType) {
+  const searchTerm = document.getElementById('search').value;
+  //   console.log('Search term retrieved:', searchTerm);
 
-function searchBooks() {
-    // const author = document.getElementById('author-search').value.trim();
-    // const bookTitle = document.getElementById('book-search').value.trim();
-    const input = document.getElementById('search').value.trim();
-    // Clear previous results
-    var resultsDiv = document.getElementById('results');
+  if (!searchTerm) {
+    document.getElementById('results').innerText = 'Please enter a search term.';
+  }
 
-
-    // Dummy search results - replace this part with your actual search logic
-    const books = [
-        { title: 'Example Book 1', author: 'Author 1', url: 'http://example.com/book1' },
-        { title: 'Example Book 2', author: 'Author 2', url: 'http://example.com/book2' }
-    ]
-    resultsDiv.innerHTML = '';
-    let results = []
-    if (input === '') {
-        resultsDiv.innerHTML = 'Please provide book title or author';
-        return;
-    } else {
-        results = books.filter(b => b.title.toLowerCase().includes(input) || b.author.toLowerCase().includes(input));
-    }
-
-    if (results.length === 0) {
-        resultsDiv.innerHTML = 'Nothing found, try something else.';
-    } else {
-        results.forEach(result => {
-            const link = document.createElement('a');
-            link.href = result.url;
-            link.textContent = `${result.title} by ${result.author}`;
-            link.target = "_blank";
-            resultsDiv.appendChild(link);
-            resultsDiv.appendChild(document.createElement('br'));
-        });
-    }
+  console.log('Making API request', `term=${encodeURIComponent(searchTerm)}&type=${encodeURIComponent(searchType)}`);
+  fetch(`http://localhost:3000/search?term=${encodeURIComponent(searchTerm)}&type=${encodeURIComponent(searchType)}`)
+      .then((response) => {
+        console.log('API request successful');
+        return response.json();
+      })
+      .then((data) => {
+        console.log('Data received from API:', data);
+        displayResults(data);
+      })
+      .catch((error) => {
+        console.error('Error during fetch operation:', error);
+        document.getElementById('results').innerText = `No ${searchType} found, try another one`;
+      });
 }
 
+
+function displayResults(data) {
+  const resultsDiv = document.getElementById('results');
+  resultsDiv.innerHTML = '';
+
+  if (data.titleResult || data.authorResult) {
+    if (data.titleResult) {
+      resultsDiv.innerHTML += `<p><strong>Title Match:</strong> ${data.titleResult}</p>`;
+    }
+    if (data.authorResult) {
+      resultsDiv.innerHTML += `<p><strong>Author Match:</strong> ${data.authorResult}</p>`;
+    }
+  } else {
+    resultsDiv.innerHTML = '<p>No results found. Try a different search term.</p>';
+  }
+}

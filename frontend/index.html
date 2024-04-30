@@ -10,13 +10,12 @@
     <div class="main-container">
         <h1>Project Gutenberg Search</h1>
         <div class="search-container">
-            <input type="text" placeholder="enter..." id="search" />
-            
+            <input type="text" placeholder="Enter book title or author name..." id="search" />
         </div>
         <p>Start your search by entering book title or author.</p>
         <div class="button-container">
-            <button class="outline" onclick="searchBooks()">Search book</button>
-            <button class="outline" onclick="searchBooks()">Search author</button>
+            <button class="outline" onclick="searchBooks('title')">Search by Title</button>
+            <button class="outline" onclick="searchBooks('author')">Search by Author</button>
         </div>
         <div id="results"></div>
     </div>
