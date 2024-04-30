@@ -1,9 +1,9 @@
-global.fetch = require('node-fetch');
-process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
-
-global.nodeConfig = {ip: '127.0.0.1', port: 7070};
+const natural = require('natural');
 const distribution = require('../distribution');
 const id = distribution.util.id;
+
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
+global.nodeConfig = {ip: '127.0.0.1', port: 7070};
 
 const groupsTemplate = require('../distribution/all/groups');
 
@@ -68,19 +68,32 @@ const terminate = () => {
   });
 };
 
-
 let indexMap = (fileName, obj) => {
   const contentTitle = obj[0].title;
   const contentAuthor = obj[0].author;
   const url = obj[0].url;
 
+  const createNGrams = (words, n) => {
+    const ngrams = [];
+    for (let i = 0; i < words.length - n + 1; i++) {
+      ngrams.push(words.slice(i, i + n).join(' '));
+    }
+    return ngrams;
+  };
+
   const calculateTermFrequencies = (content) => {
+    const tokenizer = new natural.WordTokenizer();
     const termFrequency = {};
-    const words = content.toLowerCase().match(/\w+/g) || [];
-    const totalWords = words.length;
-    words.forEach((word) => {
-      termFrequency[word] = (termFrequency[word] || 0) + 1;
+    const words = tokenizer
+        .tokenize(content.toLowerCase());
+    const oneGrams = words;
+    const biGrams = createNGrams(words, 2);
+    const allTerms = [...oneGrams, ...biGrams];
+    const totalTerms = allTerms.length;
+    allTerms.forEach((term) => {
+      termFrequency[term] = (termFrequency[term] || 0) + 1;
     });
+    totalWords = totalTerms;
     return {termFrequency, totalWords};
   };
 
@@ -107,12 +120,12 @@ let indexMap = (fileName, obj) => {
   return output;
 };
 
-
 let indexReduce = (term, values) => {
   const N = 1000;
   let out = {};
 
-  const calculateIDF = (documentCount) => documentCount > 0 ? 1 + Math.log(N / documentCount) : 0;
+  const calculateIDF = (documentCount) =>
+    documentCount > 0 ? 1 + Math.log(N / documentCount) : 0;
 
   const calculateScores = (entries, idf) => {
     return entries.map((entry) => ({url: entry.url, score: entry.tf * idf}));
@@ -125,9 +138,24 @@ let indexReduce = (term, values) => {
   const authorIDF = calculateIDF(authorEntries.length);
 
   // eslint-disable-next-line max-len
-  const titleScores = titleEntries.length > 0 ? calculateScores(titleEntries.map((entry) => ({url: entry.url, tf: entry.titleTF})), titleIDF) : [];
+  const titleScores =
+    titleEntries.length > 0 ?
+      calculateScores(
+          titleEntries.map((entry) => ({url: entry.url, tf: entry.titleTF})),
+          titleIDF,
+      ) :
+      [];
   // eslint-disable-next-line max-len
-  const authorScores = authorEntries.length > 0 ? calculateScores(authorEntries.map((entry) => ({url: entry.url, tf: entry.authorTF})), authorIDF) : [];
+  const authorScores =
+    authorEntries.length > 0 ?
+      calculateScores(
+          authorEntries.map((entry) => ({
+            url: entry.url,
+            tf: entry.authorTF,
+          })),
+          authorIDF,
+      ) :
+      [];
 
   if (titleScores.length > 0) {
     out.titleTF = titleEntries;
@@ -155,24 +183,23 @@ let indexReduce = (term, values) => {
   return out;
 };
 
-
 const doIndexMapReduce = (cb) => {
   distribution.crawler.store.get(null, (e, v) => {
-    distribution.crawler.mr.exec({keys: v, map: indexMap, reduce: indexReduce, storeReducedValue: true}, (e, v) => {
-      terminate();
-    });
+    distribution.crawler.mr.exec(
+        {keys: v, map: indexMap, reduce: indexReduce, storeReducedValue: true},
+        (e, v) => {
+          terminate();
+        },
+    );
   });
 };
-
 
 distribution.node.start((server) => {
   localServer = server;
   const crawlerConfig = {gid: 'crawler'};
   startNodes(() => {
-    groupsTemplate(crawlerConfig).put(crawlerConfig,
-        crawlerGroup, (e, v) => {
-          doIndexMapReduce();
-        });
+    groupsTemplate(crawlerConfig).put(crawlerConfig, crawlerGroup, (e, v) => {
+      doIndexMapReduce();
+    });
   });
 });
-

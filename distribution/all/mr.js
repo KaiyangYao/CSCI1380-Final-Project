@@ -48,18 +48,28 @@ const mr = function(config) {
                     // console.log('Compact is null');
                   }
                   // console.log('Map res: ', key, value, Array.isArray(res), res);
-                  let putConfig = {key: key+'_res', gid: gid};
-                  global.distribution.local.store.put(res,
-                      putConfig, (e, v) => {
+                  if (Array.isArray(res) && res.length == 0) {
+                    const deleteConfig = {key: key, gid: gid};
+                    global.distribution.local.store.del(deleteConfig, (e, v) => {
+                      count++;
+                      if (count === matchedKeys.length) {
+                        callback(e, allRes);
+                      }
+                    });
+                  } else {
+                    let putConfig = {key: key+'_res', gid: gid};
+                    global.distribution.local.store.put(res,
+                        putConfig, (e, v) => {
                         // delete original store: '000'
-                        const deleteConfig = {key: key, gid: gid};
-                        global.distribution.local.store.del(deleteConfig, (e, v) => {
-                          count++;
-                          if (count === matchedKeys.length) {
-                            callback(e, allRes);
-                          }
+                          const deleteConfig = {key: key, gid: gid};
+                          global.distribution.local.store.del(deleteConfig, (e, v) => {
+                            count++;
+                            if (count === matchedKeys.length) {
+                              callback(e, allRes);
+                            }
+                          });
                         });
-                      });
+                  }
                 });
           }
         });
@@ -172,6 +182,7 @@ const mr = function(config) {
                     if (e != null) {
                       callback(new Error('Local Store Get Error'), null);
                     } else if (Array.isArray(value)) {
+                      // console.log('Shuffle value: ', value);
                       let countLevel2 = 0;
                       let expectedCount = value.length;
                       for (let obj of value) {
