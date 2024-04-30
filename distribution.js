@@ -5,6 +5,7 @@ const args = require('yargs').argv;
 global.fetch = require('node-fetch');
 global.cheerio = require('cheerio');
 global.JSDOM = require('jsdom').JSDOM;
+global.natural = require('natural');
 
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
 
