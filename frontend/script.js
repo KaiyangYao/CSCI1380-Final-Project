@@ -33,7 +33,7 @@ function displayResults(data) {
       resultsDiv.innerHTML += `
         <div class="result-item">
           <div class="result-content">
-          <p><strong>${index + 1}:${item.title}</strong>, written by <strong>${item.author}</strong>, in ${item.language}</p>
+          <p><strong>${index + 1}: ${item.title}</strong>, written by <strong>${item.author}</strong>, in ${item.language}</p>
           </div>
           <button class="start-reading-btn" onclick="window.open('${item.url}', '_blank')">Start Reading</button>
         </div>`;

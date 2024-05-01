@@ -17,19 +17,19 @@ body {
 }
 
 h1 {
-    font-size: 3em; /* Adjust size as needed */
+    font-size: 3em;
     margin-bottom: 0.5em;
 }
 
 .search-container {
     position: relative;
-    margin-bottom: 1em;
+    margin: 1em;
 }
 
 input[type="text"] {
     border: none;
     padding: 10px 20px;
-    width: 40%; /* Adjust width as needed */
+    width: 40%;
     border-radius: 20px;
 }
 
@@ -37,7 +37,7 @@ button {
     border: none;
     padding: 10px 20px;
     cursor: pointer;
-    margin-left: -45px; /* Overlap the button with the input field */
+    margin-left: -45px;
 }
 
 button.filled {
@@ -53,12 +53,9 @@ button.outline {
     border-radius: 20px;
 }
 
-p {
-    margin-bottom: 2em;
-}
-
 .button-container button {
     margin: 0 10px;
+    margin-bottom: 2em;
 }
 
 .start-reading-btn {
@@ -68,18 +65,16 @@ p {
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    margin-bottom: 17px;
     margin-left: 2px;
   }  
 
 .result-item {
     display: flex;
-    align-items: center;  /* Centers items vertically */
-    justify-content: space-between;  /* Spreads items across the main axis */
-   
+    align-items: center;
+    justify-content: space-between;
 }
   
 .result-content {
-    flex-grow: 1; /* Allows the content to take up available space */
-    padding-right: 20px; /* Adds some spacing between the content and the button */
+    flex-grow: 1;
+    padding-right: 20px;
 }
