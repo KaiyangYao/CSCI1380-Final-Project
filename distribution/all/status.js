@@ -3,6 +3,8 @@ const localGroups = require('../local/groups');
 const id = require('../util/id');
 
 let status = (config) => {
+  global.config = config;
+  global.config.hash = config.hash || id.naiveHash;
   let context = {};
   context.gid = config.gid || 'all'; // contains a property named gid
   return {
@@ -20,12 +22,7 @@ let status = (config) => {
               }
               callback(errors, sum);
             } else {
-              console.log('----------values: ',values);
-              if (Object.keys(values).length === 0){
-                const node = {ip: global.nodeConfig.ip, port: global.nodeConfig.port};
-                const nid = id.getNID(node);
-                callback(errors,[nid]);
-              }else {callback(errors, values);}
+              callback(errors, values);
             }
           });
     },

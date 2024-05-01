@@ -260,7 +260,7 @@ const doMapReduce = () => {
       }
     });
   });
-};  
+};
 
 const doCrawlURL = (urlKey) => {
   distribution.crawler.mr.exec({keys: urlKey, map: mapCrawlChild,

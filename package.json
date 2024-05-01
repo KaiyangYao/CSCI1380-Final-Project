@@ -19,8 +19,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "async": "^3.2.5",
     "cheerio": "^1.0.0-rc.12",
-    "express": "^4.19.2",
     "http": "^0.0.1-security",
     "https": "^1.0.0",
     "natural": "^7.0.5",
