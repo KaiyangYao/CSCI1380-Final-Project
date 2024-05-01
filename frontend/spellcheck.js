@@ -21,6 +21,6 @@ function checkSpelling(word) {
 }
 
 // Example usage
-checkSpelling('welp');
+checkSpelling('winn no');
 module.exports = checkSpelling;
 

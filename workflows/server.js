@@ -3,6 +3,11 @@ const cors = require('cors');
 const express = require('express');
 const id = distribution.util.id;
 const groupsTemplate = require('../distribution/all/groups');
+const natural = require('natural');
+const fs = require('fs');
+const path = require('path');
+const dictionaryPath = path.join(__dirname, 'dictionary.txt');
+const spellcheck = new natural.Spellcheck(fs.readFileSync(dictionaryPath).toString().split('\n'));
 
 const app = express();
 const port = 3000;
@@ -101,6 +106,19 @@ const createNGrams = (words, n) => {
   return nGrams;
 };
 
+const checkSpelling = (word) => {
+  if (spellcheck.isCorrect(word)) {
+    console.log(`The word "${word}" is spelled correctly.`);
+  } else {
+    const suggestions = spellcheck.getCorrections(word, 1); // 1 here represents the maximum distance for corrections
+    if (suggestions.length > 0) {
+      console.log(`Did you mean: ${suggestions.join(', ')}?`);
+    } else {
+      console.log(`No suggestions found for the word "${word}".`);
+    }
+  }
+}
+
 app.listen(port, () => {
   console.log(`Server listening on http://localhost:${port}`);
 });
@@ -148,7 +166,8 @@ app.get('/search', (req, res) => {
       distribution.crawler.store.get(term, (e, v) => {
         let result = {};
         if (e) {
-          result.message = 'No results found';
+          const suggest = checkSpelling(term);
+          result.message = `No results found, do you mean ${suggest}?`;
         } else {
           let scores = (searchType === 'title' ? v.titleScores : v.authorScores);
           if (scores) {
