@@ -63,6 +63,20 @@ const terminate = () => {
   });
 };
 
+startNodes((error, message) => {
+  if (error) {
+    console.error('Error starting nodes:', error);
+    return;
+  }
+  console.log(message);
+});
+
+// Stop nodes only when the process is terminating
+process.on('SIGINT', () => {
+  terminate();
+  process.exit();
+});
+
 const findClosestScores = (targetScore, candidates) => {
   candidates.sort((a, b) => {
     const diffA = Math.abs(targetScore - a.score);
@@ -87,88 +101,68 @@ const createNGrams = (words, n) => {
   return nGrams;
 };
 
+app.listen(port, () => {
+  console.log(`Server listening on http://localhost:${port}`);
+});
 
-distribution.node.start((server) => {
-  localServer = server;
+app.get('/search', (req, res) => {
+  const searchTerm = req.query.term || 'default';
+  const searchType = req.query.type || 'title';
+  const tokenizer = new global.natural.WordTokenizer();
+  const words = tokenizer.tokenize(searchTerm.toLowerCase());
+  const oneGrams = words;
+  const biGrams = createNGrams(words, 2);
+  const allTerms = [...oneGrams, ...biGrams];
 
-  app.listen(port, () => {
-    console.log(`Server listening on http://localhost:${port}`);
-  });
+  let aggregatedResults = {
+    titleResponse: [],
+    authorResponse: [],
+  };
 
+  let visited = new Set();
+  let totalTerms = allTerms.length;
+  let count = 0;
 
-  app.get('/search', (req, res) => {
-    const searchTerm = req.query.term || 'default';
-    const searchType = req.query.type || 'title';
-    const tokenizer = new global.natural.WordTokenizer();
-    const words = tokenizer.tokenize(searchTerm.toLowerCase());
-    const oneGrams = words;
-    const biGrams = createNGrams(words, 2);
-    const allTerms = [...oneGrams, ...biGrams];
+  const checkCompletion = () => {
+    if (count === totalTerms) {
+      let response = {};
 
-    let aggregatedResults = {
-      titleResponse: [],
-      authorResponse: [],
-    };
-
-    let visited = new Set();
-
-    let totalTerms = allTerms.length;
-    let count = 0;
-
-    // At this time we have finished all the bi-gram searches
-    const checkCompletion = () => {
-      if (count === totalTerms) {
-        let response = {};
-
-        if (searchType === 'title') {
-          response.results = aggregatedResults.titleResponse.flat();
-        } else if (searchType === 'author') {
-          response.results = aggregatedResults.authorResponse.flat();
-        }
-
-        if (!res.headersSent) {
-          res.json(response);
-          terminate();
-        }
-      }
-    };
-
-
-    const crawlerConfig = {gid: 'crawler'};
-    startNodes((e, v) => {
-      if (e) {
-        res.status(500).send('Failed to start all nodes, cannot proceed with search.');
-        terminate();
-        return;
+      if (searchType === 'title') {
+        response.results = aggregatedResults.titleResponse.flat();
+      } else if (searchType === 'author') {
+        response.results = aggregatedResults.authorResponse.flat();
       }
 
-      groupsTemplate(crawlerConfig).put(crawlerConfig, crawlerGroup, (e, v) => {
-        allTerms.forEach((term) => {
-          distribution.crawler.store.get(term, (e, v) => {
-            // console.log('Search results received:');
-            // console.log('term:  ', term);
-            let result = {};
-            if (e) {
-              result.message = 'No results found';
-            } else {
-              let scores = (searchType === 'title' ? v.titleScores : v.authorScores);
-              if (scores) {
-                findClosestScores(1, scores).forEach((score) => {
-                  if (!visited.has(score.title)) {
-                    visited.add(score.title);
-                    if (searchType === 'title') {
-                      aggregatedResults.titleResponse.push(score);
-                    } else {
-                      aggregatedResults.authorResponse.push(score);
-                    }
-                  }
-                });
+      if (!res.headersSent) {
+        res.json(response);
+      }
+    }
+  };
+
+  const crawlerConfig = {gid: 'crawler'};
+  groupsTemplate(crawlerConfig).put(crawlerConfig, crawlerGroup, (e, v) => {
+    allTerms.forEach((term) => {
+      distribution.crawler.store.get(term, (e, v) => {
+        let result = {};
+        if (e) {
+          result.message = 'No results found';
+        } else {
+          let scores = (searchType === 'title' ? v.titleScores : v.authorScores);
+          if (scores) {
+            findClosestScores(1, scores).forEach((score) => {
+              if (!visited.has(score.title)) {
+                visited.add(score.title);
+                if (searchType === 'title') {
+                  aggregatedResults.titleResponse.push(score);
+                } else {
+                  aggregatedResults.authorResponse.push(score);
+                }
               }
-            }
-            count++;
-            checkCompletion();
-          });
-        });
+            });
+          }
+        }
+        count++;
+        checkCompletion();
       });
     });
   });
