@@ -60,3 +60,26 @@ p {
 .button-container button {
     margin: 0 10px;
 }
+
+.start-reading-btn {
+    background-color: rgb(137, 205, 234);
+    color: white;
+    padding: 10px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 17px;
+    margin-left: 2px;
+  }  
+
+.result-item {
+    display: flex;
+    align-items: center;  /* Centers items vertically */
+    justify-content: space-between;  /* Spreads items across the main axis */
+   
+}
+  
+.result-content {
+    flex-grow: 1; /* Allows the content to take up available space */
+    padding-right: 20px; /* Adds some spacing between the content and the button */
+}

@@ -184,17 +184,17 @@ let indexReduce = (term, values) => {
     out.authorScores = authorScores;
   }
 
-  console.log('term: ', term);
-  if (titleScores.length > 0) {
-    console.log('Title TF: ', titleEntries);
-    console.log('Title IDF: ', titleIDF);
-    console.log('Title Scores: ', titleScores);
-  }
-  if (authorScores.length > 0) {
-    console.log('Author TF: ', authorEntries);
-    console.log('Author IDF: ', authorIDF);
-    console.log('Author Scores: ', authorScores);
-  }
+  //console.log('term: ', term);
+  // if (titleScores.length > 0) {
+  //   console.log('Title TF: ', titleEntries);
+  //   console.log('Title IDF: ', titleIDF);
+  //   console.log('Title Scores: ', titleScores);
+  // }
+  // if (authorScores.length > 0) {
+  //   console.log('Author TF: ', authorEntries);
+  //   console.log('Author IDF: ', authorIDF);
+  //   console.log('Author Scores: ', authorScores);
+  // }
 
   return out;
 };

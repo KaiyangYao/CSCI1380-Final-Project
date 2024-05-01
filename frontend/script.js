@@ -32,14 +32,13 @@ function displayResults(data) {
     data.results.forEach((item, index) => {
       resultsDiv.innerHTML += `
         <div class="result-item">
-          <p><strong>Result ${index + 1}:</strong></p>
-          <p><strong>URL:</strong> <a href="${item.url}" target="_blank">${item.url}</a></p>
-          <p><strong>Title:</strong> ${item.title}</p>
-          <p><strong>Author:</strong> ${item.author}</p>
-          <p><strong>Language:</strong> ${item.language}</p>
+          <div class="result-content">
+          <p><strong>${index + 1}:${item.title}</strong>, written by <strong>${item.author}</strong>, in ${item.language}</p>
+          </div>
+          <button class="start-reading-btn" onclick="window.open('${item.url}', '_blank')">Start Reading</button>
         </div>`;
     });
   } else {
-    resultsDiv.innerHTML = '<p>No results found. Try a different search term.</p>';
+    resultsDiv.innerHTML = '<p> \n No results found. Try a different search term.</p>';
   }
 }
