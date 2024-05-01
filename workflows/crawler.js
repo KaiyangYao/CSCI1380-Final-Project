@@ -26,6 +26,16 @@ const n2 = {ip: '127.0.0.1', port: 7111};
 const n3 = {ip: '127.0.0.1', port: 7112};
 const n4 = {ip: '127.0.0.1', port: 7113};
 const n5 = {ip: '127.0.0.1', port: 7114};
+const n6 = {ip: '127.0.0.1', port: 7115};
+const n7 = {ip: '127.0.0.1', port: 7116};
+const n8 = {ip: '127.0.0.1', port: 7117};
+const n9 = {ip: '127.0.0.1', port: 7118};
+const n10 = {ip: '127.0.0.1', port: 7119};
+const n11 = {ip: '127.0.0.1', port: 7120};
+const n12 = {ip: '127.0.0.1', port: 7121};
+const n13 = {ip: '127.0.0.1', port: 7122};
+const n14 = {ip: '127.0.0.1', port: 7123};
+const n15 = {ip: '127.0.0.1', port: 7124};
 
 
 crawlerGroup[id.getSID(n1)] = n1;
@@ -33,6 +43,16 @@ crawlerGroup[id.getSID(n2)] = n2;
 crawlerGroup[id.getSID(n3)] = n3;
 crawlerGroup[id.getSID(n4)] = n4;
 crawlerGroup[id.getSID(n5)] = n5;
+crawlerGroup[id.getSID(n6)] = n6;
+crawlerGroup[id.getSID(n7)] = n7;
+crawlerGroup[id.getSID(n8)] = n8;
+crawlerGroup[id.getSID(n9)] = n9;
+crawlerGroup[id.getSID(n10)] = n10;
+crawlerGroup[id.getSID(n11)] = n11;
+crawlerGroup[id.getSID(n12)] = n12;
+crawlerGroup[id.getSID(n13)] = n13;
+crawlerGroup[id.getSID(n14)] = n14;
+crawlerGroup[id.getSID(n15)] = n15;
 
 
 const startNodes = (cb) => {
@@ -41,7 +61,27 @@ const startNodes = (cb) => {
       distribution.local.status.spawn(n3, (e, v) => {
         distribution.local.status.spawn(n4, (e, v) => {
           distribution.local.status.spawn(n5, (e, v) => {
-            cb();
+            distribution.local.status.spawn(n6, (e, v) => {
+              distribution.local.status.spawn(n7, (e, v) => {
+                distribution.local.status.spawn(n8, (e, v) => {
+                  distribution.local.status.spawn(n9, (e, v) => {
+                    distribution.local.status.spawn(n10, (e, v) => {
+                      distribution.local.status.spawn(n11, (e, v) => {
+              distribution.local.status.spawn(n12, (e, v) => {
+                distribution.local.status.spawn(n13, (e, v) => {
+                  distribution.local.status.spawn(n14, (e, v) => {
+                    distribution.local.status.spawn(n15, (e, v) => {
+                      cb();
+          });
+        });
+      });
+    });
+  });
+          });
+        });
+      });
+    });
+  });
           });
         });
       });
@@ -50,7 +90,8 @@ const startNodes = (cb) => {
 };
 
 let dataset = [
-  {'000': 'https://atlas.cs.brown.edu/data/gutenberg/1/0/'},
+  {
+    '000': 'https://atlas.cs.brown.edu/data/gutenberg/1/2/'},
   // {'000': 'https://atlas.cs.brown.edu/data/gutenberg/1/1/1/'},
   // {'001': 'https://atlas.cs.brown.edu/data/gutenberg/2'},
   // {'002': 'https://atlas.cs.brown.edu/data/gutenberg/1/2/'},
@@ -59,7 +100,7 @@ let dataset = [
   // {'005': 'https://atlas.cs.brown.edu/data/gutenberg/1/5/'},
 
 ];
-let batch = '000';
+let batch = '012';
 
 const terminate = () => {
   console.log('-------------NODES CLEANING----------');
@@ -74,7 +115,37 @@ const terminate = () => {
         distribution.local.comm.send([], remote, (e, v) => {
           remote.node = n5;
           distribution.local.comm.send([], remote, (e, v) => {
+            remote.node = n6;
+  distribution.local.comm.send([], remote, (e, v) => {
+    remote.node = n7;
+    distribution.local.comm.send([], remote, (e, v) => {
+      remote.node = n8;
+      distribution.local.comm.send([], remote, (e, v) => {
+        remote.node = n9;
+        distribution.local.comm.send([], remote, (e, v) => {
+          remote.node = n10;
+          distribution.local.comm.send([], remote, (e, v) => {
+            remote.node = n11;
+  distribution.local.comm.send([], remote, (e, v) => {
+    remote.node = n12;
+    distribution.local.comm.send([], remote, (e, v) => {
+      remote.node = n13;
+      distribution.local.comm.send([], remote, (e, v) => {
+        remote.node = n14;
+        distribution.local.comm.send([], remote, (e, v) => {
+          remote.node = n15;
+          distribution.local.comm.send([], remote, (e, v) => {
             localServer.close();
+          });
+        });
+      });
+    });
+  });
+          });
+        });
+      });
+    });
+  });
           });
         });
       });
