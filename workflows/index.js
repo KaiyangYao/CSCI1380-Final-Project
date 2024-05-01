@@ -107,7 +107,7 @@ let indexMap = (fileName, obj) => {
       const normalizedFrequency = count / data.totalWords;
       let entry = output.find((o) => Object.keys(o)[0] === term);
       if (!entry) {
-        entry = {[term]: {url: url}};
+        entry = {[term]: {url: url, title: contentTitle, author: contentAuthor}};
         output.push(entry);
       }
       entry[term][tfLabel] = normalizedFrequency;
@@ -128,7 +128,7 @@ let indexReduce = (term, values) => {
     documentCount > 0 ? 1 + Math.log(N / documentCount) : 0;
 
   const calculateScores = (entries, idf) => {
-    return entries.map((entry) => ({url: entry.url, score: entry.tf * idf}));
+    return entries.map((entry) => ({url: entry.url, title: entry.title, author: entry.author, score: entry.tf * idf}));
   };
 
   const titleEntries = values.filter((v) => v.titleTF !== undefined);
@@ -141,7 +141,7 @@ let indexReduce = (term, values) => {
   const titleScores =
     titleEntries.length > 0 ?
       calculateScores(
-          titleEntries.map((entry) => ({url: entry.url, tf: entry.titleTF})),
+          titleEntries.map((entry) => ({url: entry.url, title: entry.title, author: entry.author, tf: entry.titleTF})),
           titleIDF,
       ) :
       [];
