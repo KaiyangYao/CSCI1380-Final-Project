@@ -22,17 +22,21 @@ const basePath = path.join(__dirname, '../../store');
 if (!fs.existsSync(basePath)) {
   fs.mkdirSync(basePath);
 }
-
-const dirPath = path.join(__dirname, '../../store', id.getSID(node));
-if (!fs.existsSync(dirPath)) {
-  fs.mkdirSync(dirPath);
-}
+// const batchPath = path.join(__dirname, '../../store', '000');
+// if (!fs.existsSync(batchPath)) {
+//   fs.mkdirSync(batchPath);
+// }
+// const dirPath = path.join(__dirname, '../../store', id.getSID(node));
+// if (!fs.existsSync(dirPath)) {
+//   fs.mkdirSync(dirPath);
+// }
 
 function getConfig(config, object) {
   let configuration = {};
   if (typeof config === 'string') {
     configuration.key = config;
     configuration.gid = 'local';
+    configuration.batch = './';
   } else if (typeof config === 'object') {
     configuration = config || {};
   }
@@ -40,15 +44,16 @@ function getConfig(config, object) {
     configuration.key = configuration.key || id.getID(object);
   }
   configuration.gid = configuration.gid || 'local';
+  configuration.batch = configuration.batch || './';
   return configuration;
 }
 
-function createGroupFolder(groupName) {
+function createGroupFolder(groupName, batch) {
   if (!groupName) return;
-  const dirPath = path.join(__dirname, '../../store', id.getSID(node),
+  const dirPath = path.join(__dirname, '../../store', batch, id.getSID(node),
       groupName);
   if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath);
+    fs.mkdirSync(dirPath, { recursive: true });
   }
 }
 
@@ -56,9 +61,9 @@ store.put = function(object, config, callback) {
   callback = callback || function() {};
 
   config = getConfig(config, object);
-  createGroupFolder(config.gid);
-  const filePath = path.join(__dirname, '../../store', id.getSID(node),
-      config.gid, config.key);
+  createGroupFolder(config.gid, config.batch);
+  const filePath = path.join(__dirname, '../../store', config.batch, id.getSID(node),
+      config.gid, config.key);   
   fs.writeFileSync(filePath, serialization.serialize(object));
   callback(null, object);
 };
@@ -66,6 +71,7 @@ store.put = function(object, config, callback) {
 store.append = function(object, config, callback) {
   // console.log('Object: ', object, config);
   callback = callback || function() {};
+<<<<<<< Updated upstream
   config = getConfig(config, object);
   createGroupFolder(config.gid);
   const filePath = path.join(__dirname, '../../store', id.getSID(node),
@@ -80,18 +86,82 @@ store.append = function(object, config, callback) {
     const contentList = [object];
     fs.writeFileSync(filePath, serialization.serialize(contentList));
     callback(null, contentList);
+=======
+
+  if (!Array.isArray(object)) {
+    object = [object];
+  }
+
+  configuration = getConfig(configuration, object);
+
+  const filename = path.join(__dirname, '../../store',configuration.batch, id.getSID(node),
+      configuration.gid, configuration.key);
+  try {
+    fs.accessSync(filename);
+
+    // File exists, read and update its contents
+    let data = fs.readFileSync(filename, 'utf8');
+    data = serialization.deserialize(data);
+
+    let serialized;
+    object.forEach((o) => {
+      if (Array.isArray(data)) {
+        data.push(o);
+        serialized = serialization.serialize(data);
+      } else {
+        let list = [data, o];
+        serialized = serialization.serialize(list);
+      }
+    });
+
+    fs.writeFileSync(filename, serialized);
+  } catch (err) {
+    // File doesn't exist or there's an error accessing it
+    let serialized = serialization.serialize(object);
+    fs.writeFileSync(filename, serialized);
+  }
+
+  // If you need to return something, you can do it here
+  callback(null, object);
+};
+
+store.appendAll = function(objectDict, configuration, callback) {
+  callback = callback || function() { };
+  configuration = getConfig(configuration);
+
+  let count = 0;
+  let allObjects = [];
+  let keys = Object.keys(objectDict);
+  if (count === Object.keys(objectDict).length) {
+    callback(null, allObjects);
+  }
+  for (let key of keys) {
+    store.append(objectDict[key],
+        {
+          key: key, gid: configuration.gid, batch: configuration.batch
+        },
+        (e, v) => {
+          if (v) {
+            count++;
+            allObjects.push(v);
+            if (count === Object.keys(objectDict).length) {
+              callback(null, allObjects);
+            }
+          }
+        });
+>>>>>>> Stashed changes
   }
 };
 
 store.get = function(config, callback) {
   callback = callback || function() {};
   config = getConfig(config);
-  createGroupFolder(config.gid);
+  createGroupFolder(config.gid, config.batch);
 
   if (config.key == null) {
-    const filePath = path.join(__dirname, '../../store', id.getSID(node),
-        config.gid);
-    fs.readdir(filePath, (err, files) => {
+    const filePath = path.join(__dirname, '../../store', config.batch, id.getSID(node),
+        config.gid);    
+        fs.readdir(filePath, (err, files) => {
       if (err) {
         console.log(err);
       }
@@ -99,7 +169,7 @@ store.get = function(config, callback) {
       callback(null, files);
     });
   } else {
-    const filePath = path.join(__dirname, '../../store', id.getSID(node),
+    const filePath = path.join(__dirname, '../../store',config.batch, id.getSID(node),
         config.gid, config.key);
     if (fs.existsSync(filePath)) {
       const content = fs.readFileSync(filePath, 'utf8');
@@ -113,9 +183,9 @@ store.get = function(config, callback) {
 store.del = function(config, callback) {
   callback = callback || function() {};
   config = getConfig(config);
-  createGroupFolder(config.gid);
+  createGroupFolder(config.gid, config.batch);
 
-  const filePath = path.join(__dirname, '../../store', id.getSID(node),
+  const filePath = path.join(__dirname, '../../store', config.batch, id.getSID(node),
       config.gid, config.key);
   if (fs.existsSync(filePath)) {
     const content = fs.readFileSync(filePath, 'utf8');

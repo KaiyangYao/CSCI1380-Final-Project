@@ -7,8 +7,8 @@ let store = (config) => {
   context.hash = config.hash || id.naiveHash; // hash function
   return {
     get: (configuration, callback) => {
-      if (!configuration) {
-        let message = [{key: null, gid: context.gid}];
+      if (!configuration.key) {
+        let message = [{key: null, gid: context.gid, batch: configuration.batch}];
         distribution[context.gid].comm.send(message,
             {service: 'store', method: 'get'}, (errors, values) => {
               let ketList = Object.values(values).reduce((acc, val) =>
@@ -16,7 +16,8 @@ let store = (config) => {
               callback(errors, ketList);
             });
       } else {
-        let kid = id.getID(configuration);
+        let kid = id.getID(configuration.key);
+        const batch = configuration.batch;
         distribution[context.gid].status.get('nid', (e, nids) => {
           nids = Object.values(nids);
           let nid = context.hash(kid, nids);
@@ -25,15 +26,15 @@ let store = (config) => {
           distribution.local.groups.get(context.gid, (e, nodes) => {
             let node = nodes[sid];
             let remote = {service: 'store', method: 'get', node: node};
-            let message = [{key: configuration, gid: context.gid}];
+            let message = [{key: configuration, gid: context.gid, batch: batch}];
             distribution.local.comm.send(message, remote, callback);
           });
         });
       }
     },
     put: (object, configuration, callback) => {
-      configuration = configuration || id.getID(object);
-      let kid = id.getID(configuration);
+      //configuration = configuration || id.getID(object);
+      let kid = id.getID(configuration.key);
       distribution[context.gid].status.get('nid', (e, nids) => {
         //console.log('------first nids: ', nids);
         nids = Object.values(nids);
@@ -46,14 +47,14 @@ let store = (config) => {
         distribution.local.groups.get(context.gid, (e, nodes) => {
           let node = nodes[sid];
           let remote = {service: 'store', method: 'put', node: node};
-          let message = [object, {key: configuration, gid: context.gid}];
+          let message = [object, {key: configuration.key, gid: context.gid, batch: configuration.batch}];
           distribution.local.comm.send(message, remote, callback);
         });
       });
     },
     append: (object, configuration, callback) => {
-      configuration = configuration || id.getID(object);
-      let kid = id.getID(configuration);
+      //configuration = configuration || id.getID(object);
+      let kid = id.getID(configuration.key);
       distribution[context.gid].status.get('nid', (e, nids) => {
         nids = Object.values(nids);
         let nid = context.hash(kid, nids);
@@ -62,7 +63,7 @@ let store = (config) => {
         distribution.local.groups.get(context.gid, (e, nodes) => {
           let node = nodes[sid];
           let remote = {service: 'store', method: 'append', node: node};
-          let message = [object, {key: configuration, gid: context.gid}];
+          let message = [object, {key: configuration, gid: context.gid, batch: configuration.batch}];
           distribution.local.comm.send(message, remote, callback);
         });
       });
@@ -77,7 +78,7 @@ let store = (config) => {
         distribution.local.groups.get(context.gid, (e, nodes) => {
           let node = nodes[sid];
           let remote = {service: 'store', method: 'del', node: node};
-          let message = [{key: configuration, gid: context.gid}];
+          let message = [{key: configuration, gid: context.gid, batch: configuration.batch}];
           distribution.local.comm.send(message, remote, callback);
         });
       });
