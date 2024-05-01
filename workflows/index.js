@@ -71,6 +71,7 @@ const terminate = () => {
 let indexMap = (fileName, obj) => {
   const contentTitle = obj[0].title;
   const contentAuthor = obj[0].author;
+  const contentLanguage = obj[0].language;
   const url = obj[0].url;
 
   const createNGrams = (words, n) => {
@@ -107,7 +108,12 @@ let indexMap = (fileName, obj) => {
       const normalizedFrequency = count / data.totalWords;
       let entry = output.find((o) => Object.keys(o)[0] === term);
       if (!entry) {
-        entry = {[term]: {url: url, title: contentTitle, author: contentAuthor}};
+        entry = {[term]: {
+          url: url,
+          title: contentTitle,
+          author: contentAuthor,
+          language: contentLanguage,
+        }};
         output.push(entry);
       }
       entry[term][tfLabel] = normalizedFrequency;
@@ -128,7 +134,12 @@ let indexReduce = (term, values) => {
     documentCount > 0 ? 1 + Math.log(N / documentCount) : 0;
 
   const calculateScores = (entries, idf) => {
-    return entries.map((entry) => ({url: entry.url, title: entry.title, author: entry.author, score: entry.tf * idf}));
+    return entries.map((entry) => ({
+      url: entry.url,
+      title: entry.title,
+      author: entry.author,
+      language: entry.language,
+      score: entry.tf * idf}));
   };
 
   const titleEntries = values.filter((v) => v.titleTF !== undefined);
@@ -141,7 +152,12 @@ let indexReduce = (term, values) => {
   const titleScores =
     titleEntries.length > 0 ?
       calculateScores(
-          titleEntries.map((entry) => ({url: entry.url, title: entry.title, author: entry.author, tf: entry.titleTF})),
+          titleEntries.map((entry) => ({
+            url: entry.url,
+            title: entry.title,
+            author: entry.author,
+            language: entry.language,
+            tf: entry.titleTF})),
           titleIDF,
       ) :
       [];
