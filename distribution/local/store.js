@@ -68,25 +68,8 @@ store.put = function(object, config, callback) {
   callback(null, object);
 };
 
-store.append = function(object, config, callback) {
-  // console.log('Object: ', object, config);
+store.append = function(object, configuration, callback) {
   callback = callback || function() {};
-<<<<<<< Updated upstream
-  config = getConfig(config, object);
-  createGroupFolder(config.gid);
-  const filePath = path.join(__dirname, '../../store', id.getSID(node),
-      config.gid, config.key);
-  if (fs.existsSync(filePath)) {
-    const content = fs.readFileSync(filePath, 'utf8');
-    const contentList = serialization.deserialize(content);
-    contentList.push(object);
-    fs.writeFileSync(filePath, serialization.serialize(contentList));
-    callback(null, contentList);
-  } else {
-    const contentList = [object];
-    fs.writeFileSync(filePath, serialization.serialize(contentList));
-    callback(null, contentList);
-=======
 
   if (!Array.isArray(object)) {
     object = [object];
@@ -149,7 +132,6 @@ store.appendAll = function(objectDict, configuration, callback) {
             }
           }
         });
->>>>>>> Stashed changes
   }
 };
 

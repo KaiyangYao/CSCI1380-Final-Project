@@ -4,15 +4,12 @@ const id = require('../util/id');
 const mr = function(config) {
   let context = {};
   context.gid = config.gid || 'all';
+  context.hash = config.hash || id.naiveHash;
 
   return {
     exec: (configuration, callback) => {
       /* Change this with your own exciting Map Reduce code! */
-<<<<<<< Updated upstream
-      const {keys, map, reduce, compact} = configuration;
-=======
       const {keys, map, reduce, compact, storeReducedValue, batch} = configuration;
->>>>>>> Stashed changes
 
       // Setup phase
       const mrService = {};
@@ -23,6 +20,8 @@ const mr = function(config) {
         const storeFindConfig = {key: null, gid: gid, batch: batch};
         global.distribution.local.store.get(storeFindConfig, (e, v) => {
           let matchedKeys = [];
+          // console.log('V matchedKeys: ', v);
+          // console.log('Keys matchedKeys: ', keys);
           for (let i = 0; i < v.length; i++) {
             let key = v[i];
             if (keys.includes(key)) {
@@ -30,7 +29,7 @@ const mr = function(config) {
             }
           }
           let count = 0;
-          console.log('Mapper matchedKeys: ', matchedKeys);
+          // console.log('Mapper matchedKeys: ', matchedKeys);
           if (count === matchedKeys.length) {
             callback(e, allRes);
           }
@@ -41,21 +40,13 @@ const mr = function(config) {
                   if (e != null) {
                     callback(new Error('Local Store Get Error'), null);
                   }
+                  // console.log('Map andand Value: ', key, value);
                   let res = await map(key, value);
                   if (compact != null) {
                     res = compact(res);
+                  } else {
+                    // console.log('Compact is null');
                   }
-<<<<<<< Updated upstream
-                  let putConfig = {key: key+'_res', gid: gid};
-                  global.distribution.local.store.put(res,
-                      putConfig, (e, v) => {
-                        const deleteConfig = {key: key, gid: gid};
-                        global.distribution.local.store.del(deleteConfig, (e, v) => {
-                          count++;
-                          if (count === matchedKeys.length) {
-                            callback(e, allRes);
-                          }
-=======
                   // console.log('Map res: ', key, value, Array.isArray(res), res);
                   if (Array.isArray(res) && res.length == 0) {
                     const deleteConfig = {key: key, gid: gid, batch: batch};
@@ -77,23 +68,16 @@ const mr = function(config) {
                               callback(e, allRes);
                             }
                           });
->>>>>>> Stashed changes
                         });
-                      });
+                  }
                 });
           }
         });
       };
 
-<<<<<<< Updated upstream
-      mrService.reducer = (keys, reduce, gid, callback) => {
-        const storeFindConfig = {key: null, gid: gid};
-        console.log('keys in reducer: ', keys);
-=======
       mrService.reducer = (keys, reduce, gid, storeReducedValue, batch, callback) => {
         const storeFindConfig = {key: null, gid: gid, batch: batch};
         // console.log('keys in reducer: ', keys);
->>>>>>> Stashed changes
         global.distribution.local.store.get(storeFindConfig, (e, v) => {
           let matchedKeys = [];
           for (let i = 0; i < v.length; i++) {
@@ -116,13 +100,6 @@ const mr = function(config) {
 
               let res = reduce(key, value);
               allRes.push(res);
-<<<<<<< Updated upstream
-              // console.log('Get result: ', res);
-              count++;
-              if (count === matchedKeys.length) {
-                callback(e, allRes);
-              }
-=======
 
               if (!storeReducedValue) {
                 count++;
@@ -142,7 +119,6 @@ const mr = function(config) {
                       });
                 });
               };
->>>>>>> Stashed changes
             });
           }
         });
@@ -151,7 +127,7 @@ const mr = function(config) {
       mrService.shuffle = (keys, gid, batch, callback) => {
         const storeFindConfig = {key: null, gid: gid, batch: batch};
         keys = keys.map((item) => `${item}_res`);
-        // console.log('Shuffle Keys: ', keys);
+        console.log('Shuffle Keys: ', keys);
 
         global.distribution.local.store.get(storeFindConfig, (e, v) => {
           let matchedKeys = [];
@@ -162,46 +138,13 @@ const mr = function(config) {
             }
           }
           let count = 0;
-          let groupCount = 0;
-          let expectedCount = 0;
+          // let groupCount = 0;
+          // let expectedCount = 0;
           let allKeys = [];
           if (matchedKeys.length === 0) {
             callback(e, allKeys);
           }
           // console.log('Shuffle Matched Keys: ', matchedKeys);
-<<<<<<< Updated upstream
-          for (let key of matchedKeys) {
-            const singleConfig = {key: key, gid: gid};
-            global.distribution.local.store.get(singleConfig, (e, value) => {
-              global.distribution.local.store.del(singleConfig, () => {
-                groupCount ++;
-                // console.log('Shuffle Get: ', key, value);
-                if (e != null) {
-                  callback(new Error('Local Store Get Error'), null);
-                } else if (Array.isArray(value)) {
-                  expectedCount += value.length;
-                  for (let obj of value) {
-                    let keyList = Object.keys(obj);
-                    const k = keyList[0];
-                    allKeys.push(k);
-                    const valueShuffle = obj[keyList[0]];
-                    global.distribution[gid].store.append(valueShuffle,
-                        k, (e, v) => {
-                          count++;
-                          if ((groupCount === matchedKeys.length) && (count === expectedCount)) {
-                            callback(e, allKeys);
-                          }
-                        });
-                  }
-                } else {
-                  let keyList = Object.keys(value);
-                  const k = keyList[0];
-                  if (k) {
-                    allKeys.push(k);
-                    const valueShuffle = value[keyList[0]];
-                    global.distribution[gid].store.append(valueShuffle,
-                        k, (e, v) => {
-=======
 
           global.distribution[gid].status.get('nid', (e, nids) => {
             // console.log('Shuffle nids: ', nids);
@@ -253,30 +196,46 @@ const mr = function(config) {
                         nodeSendList[nodeSID][k].push(valueShuffle);
                         countLevel2++;
                         if (countLevel2 === expectedCount) {
->>>>>>> Stashed changes
                           count++;
                           if (count === matchedKeys.length) {
-                            callback(e, allKeys);
+                            sendToNodes(nodeSendList, allKeys, callback);
                           }
-                        });
-                  } else {
-                    count++;
-                    if (count === matchedKeys.length) {
-                      callback(e, allKeys);
+                        }
+                      }
+                    } else {
+                      let keyList = Object.keys(value);
+                      const k = keyList[0];
+                      if (k) {
+                        allKeys.push(k);
+                        const valueShuffle = value[keyList[0]];
+                        let kid = global.distribution.util.id.getID(k);
+                        let nodeSID = global.config.hash(kid, nidList).substring(0, 5);
+                        nodeSendList[nodeSID][k] = nodeSendList[nodeSID][k] || [];
+                        nodeSendList[nodeSID][k].push(valueShuffle);
+                        count++;
+                        if (count === matchedKeys.length) {
+                          sendToNodes(nodeSendList, allKeys, callback);
+                        }
+                      } else {
+                        count++;
+                        if (count === matchedKeys.length) {
+                          sendToNodes(nodeSendList, allKeys, callback);
+                        }
+                      }
                     }
-                  }
-                }
-              });
+                  });
+                });
+              }
             });
-          }
+          });
         });
       };
 
       const mrServiceName = 'mr_' + id.getID(mrService);
-      let total = 0;
+
       global.distribution[context.gid].routes.put(mrService,
           mrServiceName, (e, v) => {
-            console.log('Finish Setup!', e, v);
+            // console.log('Finish Setup!', e, v);
             let remote = {
               service: mrServiceName,
               method: 'mapper',
@@ -284,13 +243,8 @@ const mr = function(config) {
             let message = [keys, map, compact, context.gid, batch];
             global.distribution[context.gid].comm.send(message,
                 remote, (e, v) => {
-<<<<<<< Updated upstream
-                  console.log('Finish Map!', e, v);
-                  let message = [keys, context.gid];
-=======
                   // console.log('Finish Map!', e, v);
                   let message = [keys, context.gid, batch];
->>>>>>> Stashed changes
                   let remote = {
                     service: mrServiceName,
                     method: 'shuffle',
@@ -305,11 +259,7 @@ const mr = function(config) {
                           }
                         }
                         // console.log('KeySet: ', keySet);
-<<<<<<< Updated upstream
-                        let message = [[...keySet], reduce, context.gid];
-=======
                         let message = [[...keySet], reduce, context.gid, storeReducedValue, batch];
->>>>>>> Stashed changes
                         let remote = {
                           service: mrServiceName,
                           method: 'reducer',
@@ -320,7 +270,6 @@ const mr = function(config) {
                               for (let resList of Object.values(res)) {
                                 for (let r of resList) {
                                   if (r) {
-                                    total += 1;
                                     finalRes.push(r);
                                   }
                                 }
@@ -331,7 +280,6 @@ const mr = function(config) {
                       });
                 });
           });
-          console.log('-------total count:', total);
     },
   };
 };
