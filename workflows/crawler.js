@@ -50,9 +50,9 @@ const startNodes = (cb) => {
 };
 
 let dataset = [
-  {'000': 'https://atlas.cs.brown.edu/data/gutenberg/1/0/'},
-  // {'000': 'https://atlas.cs.brown.edu/data/gutenberg/1/1/1/'},
+  // {'000': 'https://atlas.cs.brown.edu/data/gutenberg/1/'},
   // {'001': 'https://atlas.cs.brown.edu/data/gutenberg/2'},
+  {'000': 'https://atlas.cs.brown.edu/data/gutenberg/1/1/1/'},
   // {'002': 'https://atlas.cs.brown.edu/data/gutenberg/1/2/'},
   // {'003': 'https://atlas.cs.brown.edu/data/gutenberg/1/3/'},
   // {'004': 'https://atlas.cs.brown.edu/data/gutenberg/1/4/'},
@@ -234,6 +234,7 @@ let mapCrawlText = async (key, values) => {
     out[key] = o;
   } catch (error) {
     console.error('Crawl Text Fetch error:', error);
+    // fetch error and we could store the urls and crawl again
     return out;
   }
   return out;
