@@ -128,9 +128,13 @@ app.get('/search', (req, res) => {
       let response = {};
 
       if (searchType === 'title') {
-        response.results = aggregatedResults.titleResponse.flat();
+        response.results = aggregatedResults.titleResponse
+            .flat()
+            .sort((a, b) => b.score - a.score);
       } else if (searchType === 'author') {
-        response.results = aggregatedResults.authorResponse.flat();
+        response.results = aggregatedResults.authorResponse
+            .flat()
+            .sort((a, b) => b.score - a.score);
       }
 
       if (!res.headersSent) {
