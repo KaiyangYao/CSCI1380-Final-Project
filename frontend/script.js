@@ -28,13 +28,17 @@ function displayResults(data) {
   const resultsDiv = document.getElementById('results');
   resultsDiv.innerHTML = '';
 
-  if (data.titleResult || data.authorResult) {
-    if (data.titleResult) {
-      resultsDiv.innerHTML += `<p><strong>Title Match:</strong> ${data.titleResult}</p>`;
-    }
-    if (data.authorResult) {
-      resultsDiv.innerHTML += `<p><strong>Author Match:</strong> ${data.authorResult}</p>`;
-    }
+  if (data.results && data.results.length > 0) {
+    data.results.forEach((item, index) => {
+      resultsDiv.innerHTML += `
+        <div class="result-item">
+          <p><strong>Result ${index + 1}:</strong></p>
+          <p><strong>URL:</strong> <a href="${item.url}" target="_blank">${item.url}</a></p>
+          <p><strong>Title:</strong> ${item.title}</p>
+          <p><strong>Author:</strong> ${item.author}</p>
+          <p><strong>Language:</strong> ${item.language}</p>
+        </div>`;
+    });
   } else {
     resultsDiv.innerHTML = '<p>No results found. Try a different search term.</p>';
   }

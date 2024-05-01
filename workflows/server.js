@@ -63,17 +63,28 @@ const terminate = () => {
   });
 };
 
-const cosSim = (score, candidates) => {
-  let closest = candidates[0];
-  let minDiff = Math.abs(score - closest.score);
-  for (let i = 1; i < candidates.length; i++) {
-    let currentDiff = Math.abs(score - candidates[i].score);
-    if (currentDiff < minDiff) {
-      closest = candidates[i];
-      minDiff = currentDiff;
-    }
+const findClosestScores = (targetScore, candidates) => {
+  candidates.sort((a, b) => {
+    const diffA = Math.abs(targetScore - a.score);
+    const diffB = Math.abs(targetScore - b.score);
+    return diffA - diffB;
+  });
+
+  return candidates.slice(0, 3).map((candidate) => ({
+    url: candidate.url,
+    title: candidate.title,
+    author: candidate.author,
+    language: candidate.language,
+  }));
+};
+
+const createNGrams = (words, n) => {
+  if (n < 1 || words.length < n) return [];
+  let nGrams = [];
+  for (let i = 0; i <= words.length - n; i++) {
+    nGrams.push(words.slice(i, i + n).join(' '));
   }
-  return closest.url;
+  return nGrams;
 };
 
 
@@ -84,9 +95,42 @@ distribution.node.start((server) => {
     console.log(`Server listening on http://localhost:${port}`);
   });
 
+
   app.get('/search', (req, res) => {
     const searchTerm = req.query.term || 'default';
     const searchType = req.query.type || 'title';
+    const tokenizer = new global.natural.WordTokenizer();
+    const words = tokenizer.tokenize(searchTerm.toLowerCase());
+    const oneGrams = words;
+    const biGrams = createNGrams(words, 2);
+    const allTerms = [...oneGrams, ...biGrams];
+
+    let aggregatedResults = {
+      titleResponse: [],
+      authorResponse: [],
+    };
+
+    let totalTerms = allTerms.length;
+    let count = 0;
+
+    // At this time we have finished all the bi-gram searches
+    const checkCompletion = () => {
+      if (count === totalTerms) {
+        let response = {};
+
+        if (searchType === 'title') {
+          response.results = aggregatedResults.titleResponse.flat();
+        } else if (searchType === 'author') {
+          response.results = aggregatedResults.authorResponse.flat();
+        }
+
+        if (!res.headersSent) {
+          res.json(response);
+          terminate();
+        }
+      }
+    };
+
 
     const crawlerConfig = {gid: 'crawler'};
     startNodes((e, v) => {
@@ -97,19 +141,21 @@ distribution.node.start((server) => {
       }
 
       groupsTemplate(crawlerConfig).put(crawlerConfig, crawlerGroup, (e, v) => {
-        distribution.crawler.store.get(searchTerm, (e, v) => {
-          console.log('Search results received:');
-          let result = {};
-          if (e) {
-            result.message = 'No results found';
-          } else if (searchType === 'title' && v.titleScores) {
-            result.titleResult = cosSim(1, v.titleScores);
-          } else if (searchType === 'author' && v.authorScores) {
-            result.authorResult = cosSim(1, v.authorScores);
-          }
-
-          res.json(result);
-          terminate();
+        allTerms.forEach((term) => {
+          distribution.crawler.store.get(term, (e, v) => {
+            // console.log('Search results received:');
+            // console.log('term:  ', term);
+            let result = {};
+            if (e) {
+              result.message = 'No results found';
+            } else if (searchType === 'title' && v.titleScores) {
+              aggregatedResults.titleResponse.push(findClosestScores(1, v.titleScores));
+            } else if (searchType === 'author' && v.authorScores) {
+              aggregatedResults.authorResponse.push(findClosestScores(1, v.authorScores));
+            }
+            count++;
+            checkCompletion();
+          });
         });
       });
     });

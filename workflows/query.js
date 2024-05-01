@@ -71,20 +71,17 @@ const terminate = () => {
 };
 
 const SEARCH_TERM = 'porter';
-const cosSim = (score, candidates) => {
-  let closest = candidates[0];
-  let minDiff = Math.abs(score - closest.score);
 
-  for (let i = 1; i < candidates.length; i++) {
-    let currentDiff = Math.abs(score - candidates[i].score);
-    if (currentDiff < minDiff) {
-      closest = candidates[i];
-      minDiff = currentDiff;
-    }
-  }
+const findClosestScores = (targetScore, candidates) => {
+  candidates.sort((a, b) => {
+    const diffA = Math.abs(targetScore - a.score);
+    const diffB = Math.abs(targetScore - b.score);
+    return diffA - diffB;
+  });
 
-  return closest.url;
+  return candidates.slice(0, 3).map(candidate => candidate.url);
 };
+
 
 distribution.node.start((server) => {
   localServer = server;
@@ -104,12 +101,12 @@ distribution.node.start((server) => {
         // Since we can only search 1 term now, the tfidf score for query in cosSim is always 1
         if (v.titleScores) {
           console.log('The result document with a matching title is: ');
-          console.log(cosSim(1, v.titleScores));
+          console.log(findClosestScores(1, v.titleScores));
         }
 
         if (v.authorScores) {
           console.log('The result document with a matching author is: ');
-          console.log(cosSim(1, v.authorScores));
+          console.log(findClosestScores(1, v.authorScores));
         }
 
         terminate();
