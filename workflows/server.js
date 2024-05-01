@@ -106,6 +106,7 @@ app.listen(port, () => {
 });
 
 app.get('/search', (req, res) => {
+  let startTime = process.hrtime();
   const searchTerm = req.query.term || 'default';
   const searchType = req.query.type || 'title';
   const tokenizer = new global.natural.WordTokenizer();
@@ -137,6 +138,8 @@ app.get('/search', (req, res) => {
         res.json(response);
       }
     }
+    let endTime = process.hrtime(startTime);
+    console.log(`Operation took ${endTime[0] * 1000 + endTime[1] / 1000000} milliseconds`);
   };
 
   const crawlerConfig = {gid: 'crawler'};
