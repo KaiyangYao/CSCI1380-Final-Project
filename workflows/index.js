@@ -69,9 +69,14 @@ const terminate = () => {
 };
 
 let indexMap = (fileName, obj) => {
-  const contentTitle = obj[0].title;
-  const contentAuthor = obj[0].author;
-  const url = obj[0].url;
+  if (!obj || !Array.isArray(obj) || obj.length === 0) {
+    return [];
+  }
+
+  const {title, author, language, url} = obj[0];
+  if (!title || !author || !language || !url) {
+    return [];
+  }
 
   const createNGrams = (words, n) => {
     const ngrams = [];
@@ -83,104 +88,48 @@ let indexMap = (fileName, obj) => {
 
   const calculateTermFrequencies = (content) => {
     const tokenizer = new natural.WordTokenizer();
-    const termFrequency = {};
-    const words = tokenizer
-        .tokenize(content.toLowerCase());
-    const oneGrams = words;
-    const biGrams = createNGrams(words, 2);
-    const allTerms = [...oneGrams, ...biGrams];
-    const totalTerms = allTerms.length;
-    allTerms.forEach((term) => {
-      termFrequency[term] = (termFrequency[term] || 0) + 1;
-    });
-    totalWords = totalTerms;
-    return {termFrequency, totalWords};
+    const words = tokenizer.tokenize(content.toLowerCase());
+    return words.concat(createNGrams(words, 2)).reduce((acc, term) => {
+      acc[term] = (acc[term] || 0) + 1;
+      return acc;
+    }, {});
   };
 
-  const titleData = calculateTermFrequencies(contentTitle);
-  const authorData = calculateTermFrequencies(contentAuthor);
+  const titleData = calculateTermFrequencies(title);
+  const authorData = calculateTermFrequencies(author);
 
   const output = [];
-
-  const processTerms = (data, tfLabel) => {
-    for (const [term, count] of Object.entries(data.termFrequency)) {
-      const normalizedFrequency = count / data.totalWords;
-      let entry = output.find((o) => Object.keys(o)[0] === term);
+  [titleData, authorData].forEach((data, index) => {
+    const tfLabel = index === 0 ? 'titleTF' : 'authorTF';
+    Object.entries(data).forEach(([term, count]) => {
+      let entry = output.find((o) => o.hasOwnProperty(term));
       if (!entry) {
-        entry = {[term]: {url: url}};
+        entry = {[term]: {url, title, author, language}};
         output.push(entry);
       }
-      entry[term][tfLabel] = normalizedFrequency;
-    }
-  };
-
-  processTerms(titleData, 'titleTF');
-  processTerms(authorData, 'authorTF');
+      entry[term][tfLabel] = count / Object.keys(data).length;
+    });
+  });
 
   return output;
 };
 
 let indexReduce = (term, values) => {
-  const N = 1000;
-  let out = {};
+  if (!values) {
+    return {};
+  }
 
+  const N = 7000;
   const calculateIDF = (documentCount) =>
     documentCount > 0 ? 1 + Math.log(N / documentCount) : 0;
 
-  const calculateScores = (entries, idf) => {
-    return entries.map((entry) => ({url: entry.url, score: entry.tf * idf}));
-  };
+  const processEntries = (entries, tfLabel) => entries.filter((v) => v && v[tfLabel] !== undefined)
+      .map((entry) => ({...entry, score: entry[tfLabel] * calculateIDF(entries.length)}));
 
-  const titleEntries = values.filter((v) => v.titleTF !== undefined);
-  const authorEntries = values.filter((v) => v.authorTF !== undefined);
+  const titleScores = processEntries(values, 'titleTF');
+  const authorScores = processEntries(values, 'authorTF');
 
-  const titleIDF = calculateIDF(titleEntries.length);
-  const authorIDF = calculateIDF(authorEntries.length);
-
-  // eslint-disable-next-line max-len
-  const titleScores =
-    titleEntries.length > 0 ?
-      calculateScores(
-          titleEntries.map((entry) => ({url: entry.url, tf: entry.titleTF})),
-          titleIDF,
-      ) :
-      [];
-  // eslint-disable-next-line max-len
-  const authorScores =
-    authorEntries.length > 0 ?
-      calculateScores(
-          authorEntries.map((entry) => ({
-            url: entry.url,
-            tf: entry.authorTF,
-          })),
-          authorIDF,
-      ) :
-      [];
-
-  if (titleScores.length > 0) {
-    out.titleTF = titleEntries;
-    out.titleIDF = titleIDF;
-    out.titleScores = titleScores;
-  }
-  if (authorScores.length > 0) {
-    out.authorTF = authorEntries;
-    out.authorIDF = authorIDF;
-    out.authorScores = authorScores;
-  }
-
-  console.log('term: ', term);
-  if (titleScores.length > 0) {
-    console.log('Title TF: ', titleEntries);
-    console.log('Title IDF: ', titleIDF);
-    console.log('Title Scores: ', titleScores);
-  }
-  if (authorScores.length > 0) {
-    console.log('Author TF: ', authorEntries);
-    console.log('Author IDF: ', authorIDF);
-    console.log('Author Scores: ', authorScores);
-  }
-
-  return out;
+  return {term, titleScores, authorScores};
 };
 
 const doIndexMapReduce = (cb) => {
@@ -188,6 +137,10 @@ const doIndexMapReduce = (cb) => {
     distribution.crawler.mr.exec(
         {keys: v, map: indexMap, reduce: indexReduce, storeReducedValue: true},
         (e, v) => {
+          if (e) {
+            console.error('Map-reduce execution error:', e);
+            return;
+          }
           terminate();
         },
     );
