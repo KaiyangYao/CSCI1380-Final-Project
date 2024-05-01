@@ -70,7 +70,7 @@ const findClosestScores = (targetScore, candidates) => {
     return diffA - diffB;
   });
 
-  return candidates.slice(0, 3).map((candidate) => ({
+  return candidates.slice(0, 10).map((candidate) => ({
     url: candidate.url,
     title: candidate.title,
     author: candidate.author,
@@ -110,6 +110,8 @@ distribution.node.start((server) => {
       authorResponse: [],
     };
 
+    let visited = new Set();
+
     let totalTerms = allTerms.length;
     let count = 0;
 
@@ -148,10 +150,20 @@ distribution.node.start((server) => {
             let result = {};
             if (e) {
               result.message = 'No results found';
-            } else if (searchType === 'title' && v.titleScores) {
-              aggregatedResults.titleResponse.push(findClosestScores(1, v.titleScores));
-            } else if (searchType === 'author' && v.authorScores) {
-              aggregatedResults.authorResponse.push(findClosestScores(1, v.authorScores));
+            } else {
+              let scores = (searchType === 'title' ? v.titleScores : v.authorScores);
+              if (scores) {
+                findClosestScores(1, scores).forEach((score) => {
+                  if (!visited.has(score.title)) {
+                    visited.add(score.title);
+                    if (searchType === 'title') {
+                      aggregatedResults.titleResponse.push(score);
+                    } else {
+                      aggregatedResults.authorResponse.push(score);
+                    }
+                  }
+                });
+              }
             }
             count++;
             checkCompletion();
