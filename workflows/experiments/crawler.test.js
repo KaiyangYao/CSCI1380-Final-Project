@@ -1,10 +1,10 @@
 global.fetch = require('node-fetch');
 
 global.nodeConfig = {ip: '127.0.0.1', port: 7070};
-const distribution = require('../distribution');
+const distribution = require('../../distribution');
 const id = distribution.util.id;
 
-const groupsTemplate = require('../distribution/all/groups');
+const groupsTemplate = require('../../distribution/all/groups');
 
 const crawlerGroup = {};
 

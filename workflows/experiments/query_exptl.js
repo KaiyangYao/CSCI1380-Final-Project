@@ -38,9 +38,9 @@ const tfIdfScores = calculateTfIdf(query);
 console.log('TF-IDF Vector Scores: ', tfIdfScores);
 
 
-const distribution = require('../distribution');
+const distribution = require('../../distribution');
 const id = distribution.util.id;
-const groupsTemplate = require('../distribution/all/groups');
+const groupsTemplate = require('../../distribution/all/groups');
 const booksGroup = {};
 
 let localServer = null;

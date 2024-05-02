@@ -2,10 +2,10 @@ global.fetch = require('node-fetch');
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
 
 global.nodeConfig = {ip: '127.0.0.1', port: 7070};
-const distribution = require('../distribution');
+const distribution = require('../../distribution');
 const id = distribution.util.id;
 
-const groupsTemplate = require('../distribution/all/groups');
+const groupsTemplate = require('../../distribution/all/groups');
 
 const crawlerGroup = {};
 
@@ -79,7 +79,7 @@ const findClosestScores = (targetScore, candidates) => {
     return diffA - diffB;
   });
 
-  return candidates.slice(0, 3).map(candidate => candidate.url);
+  return candidates.slice(0, 3).map((candidate) => candidate.url);
 };
 
 
