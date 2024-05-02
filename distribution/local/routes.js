@@ -1,4 +1,3 @@
-//const local = require('./local');
 const comm = require('./comm');
 const status = require('./status');
 const groups = require('./groups');

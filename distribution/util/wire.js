@@ -21,7 +21,7 @@ function createRPC(func) {
             callback(null,v)
         };
     });`;
-  return new Function('...args',stub);
+  return new Function('...args', stub);
 }
 
 /*
