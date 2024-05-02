@@ -27,17 +27,30 @@ function searchBooks(searchType) {
 function displayResults(data) {
   const resultsDiv = document.getElementById('results');
   resultsDiv.innerHTML = '';
-
   if (data.results && data.results.length > 0) {
-    data.results.forEach((item, index) => {
-      resultsDiv.innerHTML += `
-        <div class="result-item">
-          <div class="result-content">
-          <p><strong>${index + 1}: ${item.title}</strong>, written by <strong>${item.author}</strong>, in ${item.language}</p>
-          </div>
-          <button class="start-reading-btn" onclick="window.open('${item.url}', '_blank')">Start Reading</button>
-        </div>`;
-    });
+    if (data.noMatch) {
+      let suggestionsHtml = '<p>No exact match found, did you mean: ';
+      data.results.forEach((item, index) => {
+        suggestionsHtml += `<strong>${item}</strong>`;
+        if (index < data.results.length - 1) {
+          suggestionsHtml += ', ';
+        } else {
+          suggestionsHtml += '? ';
+        }
+        resultsDiv.innerHTML = suggestionsHtml;
+      });
+    } else {
+      data.results.forEach((item, index) => {
+        resultsDiv.innerHTML += `
+          <div class="result-item">
+            <div class="result-content">
+            <p><strong>${index + 1}: ${item.title}</strong>, 
+            written by <strong>${item.author}</strong>, in ${item.language}</p>
+            </div>
+            <button class="start-reading-btn" onclick="window.open('${item.url}', '_blank')">Start Reading</button>
+          </div>`;
+      });
+    }
   } else {
     resultsDiv.innerHTML = '<p> \n No results found. Try a different search term.</p>';
   }

@@ -3,6 +3,7 @@ const cors = require('cors');
 const express = require('express');
 const id = distribution.util.id;
 const groupsTemplate = require('../distribution/all/groups');
+const checkSpelling = require('./spellcheck');
 
 const app = express();
 const port = 3000;
@@ -117,6 +118,7 @@ app.get('/search', (req, res) => {
   let aggregatedResults = {
     titleResponse: [],
     authorResponse: [],
+    suggestions: [],
   };
 
   let visited = new Set();
@@ -125,16 +127,26 @@ app.get('/search', (req, res) => {
 
   const checkCompletion = () => {
     if (count === totalTerms) {
-      let response = {};
+      let response = {noMatch: false};
 
       if (searchType === 'title') {
-        response.results = aggregatedResults.titleResponse
-            .flat()
-            .sort((a, b) => b.score - a.score);
+        if (aggregatedResults.titleResponse.length === 0) {
+          response.noMatch = true;
+          response.results = aggregatedResults.suggestions;
+        } else {
+          response.results = aggregatedResults.titleResponse
+              .flat()
+              .sort((a, b) => b.score - a.score);
+        }
       } else if (searchType === 'author') {
-        response.results = aggregatedResults.authorResponse
-            .flat()
-            .sort((a, b) => b.score - a.score);
+        if (aggregatedResults.authorResponse.length === 0) {
+          response.noMatch = true;
+          response.results = aggregatedResults.suggestions;
+        } else {
+          response.results = aggregatedResults.authorResponse
+              .flat()
+              .sort((a, b) => b.score - a.score);
+        }
       }
 
       if (!res.headersSent) {
@@ -147,9 +159,8 @@ app.get('/search', (req, res) => {
   groupsTemplate(crawlerConfig).put(crawlerConfig, crawlerGroup, (e, v) => {
     allTerms.forEach((term) => {
       distribution.crawler.store.get(term, (e, v) => {
-        let result = {};
         if (e) {
-          result.message = 'No results found';
+          aggregatedResults.suggestions = checkSpelling(term);
         } else {
           let scores = (searchType === 'title' ? v.titleScores : v.authorScores);
           if (scores) {
