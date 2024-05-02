@@ -1,6 +1,7 @@
 const distribution = require('../distribution');
 const cors = require('cors');
 const express = require('express');
+const path = require('path');
 const id = distribution.util.id;
 const groupsTemplate = require('../distribution/all/groups');
 const checkSpelling = require('./spellcheck');
@@ -102,8 +103,14 @@ const createNGrams = (words, n) => {
   return nGrams;
 };
 
+app.use(express.static(path.join(__dirname, '../frontend')));
+
 app.listen(port, () => {
   console.log(`Server listening on http://localhost:${port}`);
+});
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 app.get('/search', (req, res) => {
