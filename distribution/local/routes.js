@@ -1,5 +1,11 @@
-const services = {};
+//const local = require('./local');
+const comm = require('./comm');
+const status = require('./status');
+const groups = require('./groups');
+const mem = require('./mem');
+const store = require('./store');
 
+const services = {};
 const routes = {
   get: function(name, callback) {
     if (services.hasOwnProperty(name)) {
@@ -16,3 +22,12 @@ const routes = {
     callback(null, 'service added');
   },
 };
+
+services['comm'] = comm;
+services['routes'] = routes;
+services['status'] = status;
+services['groups'] = groups;
+services['mem'] = mem;
+services['store'] = store;
+
+module.exports = routes;
