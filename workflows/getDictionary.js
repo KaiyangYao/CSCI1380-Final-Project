@@ -20,9 +20,8 @@ async function listFilesRecursively(dir, outputFile) {
     }
 }
 
-// Example usage: Change 'your/folder/path' to the folder you want to scan
-const folderPath = path.join(__dirname, '../store');  // Set your folder path here
-const outputFilePath = path.join(__dirname, 'dictionary.txt');  // Output file path
+const folderPath = path.join(__dirname, '../store');
+const outputFilePath = path.join(__dirname, 'dictionary.txt');
 
 // Start the process and handle errors
 listFilesRecursively(folderPath, outputFilePath)
