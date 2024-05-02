@@ -30,7 +30,7 @@ comm.send = (message, remote, callback) => {
   });
 
   req.on('error', (error) => {
-    callback(new Error(error), null);
+    callback(new Error(error));
   });
 
   req.write(serializedMessage);

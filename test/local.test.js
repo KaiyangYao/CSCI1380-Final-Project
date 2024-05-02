@@ -241,7 +241,7 @@ test('(9 pts) RPC1', (done) => {
         }
         s.addOneRPC((e, v) => {
           s.addOneRPC((e, v) => {
-            s.addOneRPC((e, v) => {
+          s.addOneRPC((e, v) => {
               server.close();
               try {
                 expect(e).toBeFalsy();
