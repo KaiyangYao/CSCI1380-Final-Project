@@ -21,9 +21,13 @@ Once deployed, our search engine will be accessible via a URL.
 2. Run `npm install` from the project root to install all the project dependencies
 
 ### Start the App
-Note that starting the project for the first time involves some preprocessing of the data, which is a one-time requirement.
+Note:
+- Starting the project for the first time involves some preprocessing of the data, which is a one-time requirement.
+- When running each step below, you need to kill the running port using `for port in {7110..7114}; do pid=$(lsof -ti :$port); [ -n "$pid" ] && kill -9 $pid; done` if you receive a listen EADDRINUSE error.
+- Before running step 1, ensure that your store folder under the root directory is empty.
 
-1. Run `node workflow/crawler.js` to crawl the available books on Project Gutenberg. This might take a couple of minutes. You can always change the URL in the dataset section in this file to adjust the size of the books to be crawled.
+Steps:
+1. Run `node workflow/crawler.js` to crawl the available books on Project Gutenberg. This might take a couple of minutes. You can always change the URL in the dataset section in this file to adjust the size of the books to be crawled. (We recommend using our default URL, which includes fewer books, as a first test.)
 2. Run `node workflow/index.js` to create appropriate data structures for efficiently answering queries. (Spoiler Alert: We used TF-IDF metrics for information retrieval.)
 3. Run `node workflow/generateDict.js` to generate a dictionary for later spell-checking during searches.
 4. Run `node workflow/server.js` to start the Express server.
