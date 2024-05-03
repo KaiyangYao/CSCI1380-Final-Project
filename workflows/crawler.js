@@ -22,10 +22,10 @@ let localServer = null;
 */
 
 const n1 = {ip: '127.0.0.1', port: 7110};
-const n2 = {ip: '127.0.0.1', port: 7111};
-const n3 = {ip: '127.0.0.1', port: 7112};
-const n4 = {ip: '127.0.0.1', port: 7113};
-const n5 = {ip: '127.0.0.1', port: 7114};
+const n2 = {ip: '3.16.217.200', port: 7111};
+const n3 = {ip: '18.118.19.52', port: 7112};
+const n4 = {ip: '18.191.192.169', port: 7113};
+const n5 = {ip: '3.145.153.114', port: 7114};
 
 
 crawlerGroup[id.getSID(n1)] = n1;
