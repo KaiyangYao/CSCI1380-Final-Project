@@ -120,7 +120,8 @@ app.get('/search', (req, res) => {
   const words = tokenizer.tokenize(searchTerm.toLowerCase());
   const oneGrams = words;
   const biGrams = createNGrams(words, 2);
-  const allTerms = [...oneGrams, ...biGrams];
+  // We will list the bi-grams closest result first
+  const allTerms = [...biGrams, ...oneGrams];
 
   let aggregatedResults = {
     titleResponse: [],
@@ -141,18 +142,14 @@ app.get('/search', (req, res) => {
           response.noMatch = true;
           response.results = aggregatedResults.suggestions;
         } else {
-          response.results = aggregatedResults.titleResponse
-              .flat()
-              .sort((a, b) => b.score - a.score);
+          response.results = aggregatedResults.titleResponse.flat();
         }
       } else if (searchType === 'author') {
         if (aggregatedResults.authorResponse.length === 0) {
           response.noMatch = true;
           response.results = aggregatedResults.suggestions;
         } else {
-          response.results = aggregatedResults.authorResponse
-              .flat()
-              .sort((a, b) => b.score - a.score);
+          response.results = aggregatedResults.authorResponse.flat();
         }
       }
 
@@ -171,13 +168,13 @@ app.get('/search', (req, res) => {
         } else {
           let scores = (searchType === 'title' ? v.titleScores : v.authorScores);
           if (scores) {
-            findClosestScores(1, scores).forEach((score) => {
-              if (!visited.has(score.title)) {
-                visited.add(score.title);
+            findClosestScores(1, scores).forEach((candidate) => {
+              if (!visited.has(candidate.title)) {
+                visited.add(candidate.title);
                 if (searchType === 'title') {
-                  aggregatedResults.titleResponse.push(score);
+                  aggregatedResults.titleResponse.push(candidate);
                 } else {
-                  aggregatedResults.authorResponse.push(score);
+                  aggregatedResults.authorResponse.push(candidate);
                 }
               }
             });
